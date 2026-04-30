@@ -1,0 +1,53 @@
+name: Product Sync Pipeline
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'  # Every 12 hours
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run product sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          AFFILIATE_API_URL: ${{ secrets.AFFILIATE_API_URL }}
+          AFFILIATE_API_KEY: ${{ secrets.AFFILIATE_API_KEY }}
+        run: cd backend/scraper && python main.py
+
+      - name: Generate ad creatives
+        run: |
+          cd backend/ad_generator
+          pip install playwright
+          playwright install chromium
+          node generate.js
+
+      - name: Upload ad creatives
+        uses: actions/upload-artifact@v4
+        with:
+          name: ad-creatives
+          path: backend/ad_generator/output/
+
+  notify:
+    needs: sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification (optional)
+        run: echo "Sync completed successfully"

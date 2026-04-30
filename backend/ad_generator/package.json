@@ -1,0 +1,10 @@
+{
+  "name": "ad-generator",
+  "version": "1.0.0",
+  "scripts": {
+    "generate": "node generate.js"
+  },
+  "dependencies": {
+    "puppeteer": "^21.7.0"
+  }
+}

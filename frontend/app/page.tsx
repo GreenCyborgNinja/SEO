@@ -1,0 +1,64 @@
+import { Suspense } from 'react'
+import { supabase, isConfigured, MOCK_PRODUCTS, MOCK_CATEGORIES, type Product } from '@/lib/supabase'
+import ProductCard from '@/components/ProductCard'
+import CategoryFilter from '@/components/CategoryFilter'
+
+async function getProducts(): Promise<Product[]> {
+  if (!isConfigured) {
+    return MOCK_PRODUCTS
+  }
+  const { data } = await supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  return data || []
+}
+
+async function getCategories() {
+  if (!isConfigured) {
+    return MOCK_CATEGORIES
+  }
+  const { data } = await supabase
+    .from('categories')
+    .select('*')
+    .order('name')
+
+  return data || []
+}
+
+export const revalidate = 3600
+
+export default async function HomePage() {
+  const [products, categories] = await Promise.all([getProducts(), getCategories()])
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <section className="mb-12 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
+          IT-Trends
+        </h1>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Die aktuellsten Tech-Deals und Produkte – vergleiche Preise und kaufe günstig über unsere Affiliate-Links.
+        </p>
+      </section>
+
+      <CategoryFilter />
+
+      {products.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {products.map((product, index) => (
+            <ProductCard key={product.id} product={product} index={index} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16">
+          <p className="text-gray-500 text-lg">
+            Noch keine Produkte verfügbar. Die Daten werden bald synchronisiert.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
