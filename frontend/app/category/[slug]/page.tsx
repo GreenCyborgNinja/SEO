@@ -34,18 +34,20 @@ async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const category = await getCategory(params.slug)
+  const { slug } = await params
+  const category = await getCategory(slug)
   return {
-    title: category?.name || params.slug,
-    description: `Entdecke die besten ${category?.name || params.slug} Deals bei IT-Trends. Wir vergleichen Preise und finden die günstigsten Angebote für dich.`,
+    title: category?.name || slug,
+    description: `Entdecke die besten ${category?.name || slug} Deals bei IT-Trends.`,
   }
 }
 
 export const revalidate = 3600
 
 export default async function CategoryPage({ params }: PageProps) {
-  const category = await getCategory(params.slug)
-  const products = await getProductsByCategory(params.slug)
+  const { slug } = await params
+  const category = await getCategory(slug)
+  const products = await getProductsByCategory(slug)
 
   const categoryNames: Record<string, string> = {
     laptops: 'Laptops',
@@ -57,12 +59,12 @@ export default async function CategoryPage({ params }: PageProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <CategoryFilter activeCategory={params.slug} />
+        <CategoryFilter activeCategory={slug} />
       </div>
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-primary">
-          {categoryNames[params.slug] || params.slug}
+          {categoryNames[slug] || slug}
         </h1>
         {category?.description && (
           <p className="text-gray-600 mt-2">{category.description}</p>

@@ -22,7 +22,8 @@ async function getProduct(id: string): Promise<Product | null> {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const product = await getProduct(params.id)
+  const { id } = await params
+  const product = await getProduct(id)
   if (!product) return { title: 'Produkt nicht gefunden' }
 
   return {
@@ -63,7 +64,8 @@ function generateJsonLd(product: Product) {
 export const revalidate = 3600
 
 export default async function ProductPage({ params }: PageProps) {
-  const product = await getProduct(params.id)
+  const { id } = await params
+  const product = await getProduct(id)
   if (!product) notFound()
 
   const savings = product.original_price
