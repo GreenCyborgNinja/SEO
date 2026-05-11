@@ -27,35 +27,17 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-gray-400">
               <li><Link href="/about" className="hover:text-white">Über uns</Link></li>
               <li><Link href="/privacy" className="hover:text-white">Datenschutz</Link></li>
-              <li><Link href="/contact" className="hover:text-white">Kontakt</Link></li>
+              <li><Link href="/impressum" className="hover:text-white">Impressum</Link></li>
             </ul>
           </div>
 
-          <div>
-            <h4 className="font-semibold mb-4">Newsletter</h4>
-            <p className="text-sm text-gray-400 mb-3">
-              Keine Deals mehr verpassen.
-            </p>
-            <form className="flex gap-2">
-              <input
-                type="email"
-                placeholder="E-Mail"
-                className="px-3 py-2 bg-primary rounded text-sm flex-1"
-              />
-              <button
-                type="submit"
-                className="bg-accent px-4 py-2 rounded text-sm font-medium hover:brightness-110 transition"
-              >
-                OK
-              </button>
-            </form>
-          </div>
+          
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
           <p>© 2026 IT-Trends. Alle Rechte vorbehalten.</p>
           <p className="mt-2 text-xs">
-           Als Amazon-Partner verdienen wir an qualifizierten Käufen.
+           Als Amazon Associate verdiene ich an qualifizierten Käufen.
           </p>
         </div>
       </div>

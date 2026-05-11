@@ -138,6 +138,9 @@ export default async function ProductPage({ params }: PageProps) {
               <span className="price-tag text-4xl font-bold text-accent">
                 {formatPrice(product.price)}
               </span>
+              <small className="block text-xs text-gray-400 mt-1">
+                Preis zuletzt aktualisiert am: {product.updated_at ? new Date(product.updated_at).toLocaleString('de-DE') : 'unbekannt'}. Preise und Verfügbarkeit sind zum angegebenen Zeitpunkt genau und können sich ändern.
+              </small>
               {product.original_price && (
                 <>
                   <span className="price-tag text-xl text-gray-400 line-through">
