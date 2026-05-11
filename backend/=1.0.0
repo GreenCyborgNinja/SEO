@@ -1,0 +1,24 @@
+Collecting groq
+  Downloading groq-1.2.0-py3-none-any.whl.metadata (16 kB)
+Requirement already satisfied: httpx in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (0.27.2)
+Collecting python-dotenv
+  Downloading python_dotenv-1.2.2-py3-none-any.whl.metadata (27 kB)
+Requirement already satisfied: anyio<5,>=3.5.0 in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from groq) (4.13.0)
+Collecting distro<2,>=1.7.0 (from groq)
+  Downloading distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+Requirement already satisfied: pydantic<3,>=1.9.0 in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from groq) (2.13.4)
+Requirement already satisfied: sniffio in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from groq) (1.3.1)
+Requirement already satisfied: typing-extensions<5,>=4.14 in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from groq) (4.15.0)
+Requirement already satisfied: certifi in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from httpx) (2026.4.22)
+Requirement already satisfied: httpcore==1.* in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from httpx) (1.0.9)
+Requirement already satisfied: idna in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from httpx) (3.14)
+Requirement already satisfied: h11>=0.16 in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from httpcore==1.*->httpx) (0.16.0)
+Requirement already satisfied: annotated-types>=0.6.0 in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from pydantic<3,>=1.9.0->groq) (0.7.0)
+Requirement already satisfied: pydantic-core==2.46.4 in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from pydantic<3,>=1.9.0->groq) (2.46.4)
+Requirement already satisfied: typing-inspection>=0.4.2 in C:\Users\Leon\AppData\Local\Programs\Python\Python314\Lib\site-packages (from pydantic<3,>=1.9.0->groq) (0.4.2)
+Downloading groq-1.2.0-py3-none-any.whl (142 kB)
+Downloading distro-1.9.0-py3-none-any.whl (20 kB)
+Downloading python_dotenv-1.2.2-py3-none-any.whl (22 kB)
+Installing collected packages: python-dotenv, distro, groq
+
+Successfully installed distro-1.9.0 groq-1.2.0 python-dotenv-1.2.2
