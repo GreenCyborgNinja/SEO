@@ -37,7 +37,7 @@ export default async function HomePage() {
     <div className="container mx-auto px-4 py-8">
       <section className="mb-12 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
-          IT-Trends
+          Daily Trends
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Die aktuellsten Tech-Deals und Produkte – vergleiche Preise und kaufe günstig über unsere Affiliate-Links.
@@ -45,7 +45,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mb-12 max-w-4xl mx-auto text-center">
-        <h2 className="text-2xl font-semibold text-primary mb-4">So findest du die besten Deals bei IT-Trends</h2>
+        <h2 className="text-2xl font-semibold text-primary mb-4">So findest du die besten Deals bei Daily Trends</h2>
         <div className="text-gray-600 space-y-4 text-left">
           <p>
             Unser Team aus erfahrenen Tech-Experten durchkämmt täglich die Angebote von Amazon und anderen namhaften Händlern, um dir die attraktivsten Deals zu präsentieren. Dabei achten wir nicht nur auf den Preis, sondern bewerten auch Produktbewertungen, technische Spezifikationen und das Preis-Leistungs-Verhältnis, um sicherzustellen, dass du nur die wirklich lohnenswerten Angebote findest.

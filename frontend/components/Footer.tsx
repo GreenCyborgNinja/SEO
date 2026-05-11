@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-lg font-bold mb-4 text-accent">IT-Trends</h3>
+            <h3 className="text-lg font-bold mb-4 text-accent">Daily Trends</h3>
             <p className="text-gray-400 text-sm">
               Dein Partner für aktuelle Tech-Deals und Produktvergleiche.
             </p>
@@ -35,7 +35,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
-          <p>© 2026 IT-Trends. Alle Rechte vorbehalten.</p>
+          <p>© 2026 Daily Trends. Alle Rechte vorbehalten.</p>
           <p className="mt-2 text-xs">
            Als Amazon Associate verdiene ich an qualifizierten Käufen.
           </p>

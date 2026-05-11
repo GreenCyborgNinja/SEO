@@ -65,4 +65,4 @@ Gib nur die Beschreibung zurück, keine Überschriften oder Formatierung."""
 
 def fallback_seo_description(product: Dict[str, Any]) -> str:
     """Fallback when API is not available"""
-    return f"Entdecke {product['name']} von {product.get('brand', 'Top-Marken')} – die perfekte Wahl für alle, die Wert auf Qualität und moderne Technik legen. Jetzt günstig bei IT-Trends kaufen!"
+    return f"Entdecke {product['name']} von {product.get('brand', 'Top-Marken')} – die perfekte Wahl für alle, die Wert auf Qualität und moderne Technik legen. Jetzt günstig bei Daily Trends kaufen!"

@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { supabase, isConfigured, MOCK_PRODUCTS } from '@/lib/supabase'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://it-trends.de'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://daily-trends.de'
 
   let products = []
   if (isConfigured) {
@@ -24,6 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { slug: 'smartphones', priority: 0.9 },
     { slug: 'gaming', priority: 0.9 },
     { slug: 'zubehoer', priority: 0.8 },
+    { slug: 'buecher', priority: 0.8 },
   ]
 
   const categoryUrls = categories.map((cat) => ({

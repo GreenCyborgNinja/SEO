@@ -14,7 +14,7 @@ export default function ImpressumPage() {
         <section>
           <h2 className="text-xl font-semibold text-primary mb-3">Angaben gemäß § 5 TMG</h2>
           <p>
-            <strong>IT-Trends</strong><br />
+            <strong>Daily Trends</strong><br />
             Musterstraße 123<br />
             12345 Musterstadt<br />
             Deutschland
@@ -24,7 +24,7 @@ export default function ImpressumPage() {
         <section>
           <h2 className="text-xl font-semibold text-primary mb-3">Kontakt</h2>
           <p>
-            E-Mail: kontakt@it-trends.de<br />
+            E-Mail: kontakt@daily-trends.de<br />
             Telefon: +49 (0) 123 456789
           </p>
         </section>

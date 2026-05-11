@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Über uns',
-  description: 'Erfahre mehr über IT-Trends und unser Ziel, dir die besten Tech-Deals zu bieten.',
+  description: 'Erfahre mehr über Daily Trends und unser Ziel, dir die besten Tech-Deals zu bieten.',
 }
 
 export default function AboutPage() {
@@ -12,7 +12,7 @@ export default function AboutPage() {
       
       <div className="prose max-w-none text-gray-600">
         <p className="text-lg mb-6">
-          Willkommen bei IT-Trends! Wir sind dein kompetenter Partner für aktuelle Tech-Deals und Produktvergleiche.
+          Willkommen bei Daily Trends! Wir sind dein kompetenter Partner für aktuelle Tech-Deals und Produktvergleiche.
         </p>
         
         <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">Unsere Mission</h2>

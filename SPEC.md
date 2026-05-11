@@ -1,8 +1,8 @@
-# IT-Trends Affiliate Shop - Specification
+# Daily Trends Affiliate Shop - Specification
 
 ## 1. Project Overview
 
-**Project Name:** IT-Trends - Automated Affiliate Product Shop
+**Project Name:** Daily Trends - Automated Affiliate Product Shop
 **Project Type:** SEO-optimized affiliate website with automated product syncing
 **Core Functionality:** An automatically generated online shop that displays IT/tech products with affiliate links, regularly syncs products from external sources, and generates AI-optimized SEO content
 **Target Users:** Tech-savvy online shoppers looking for IT products and deals
@@ -28,7 +28,7 @@
 ### Layout Structure
 
 **Header**
-- Logo: "IT-Trends" with tech-inspired icon
+- Logo: "Daily Trends" with tech-inspired icon
 - Navigation: Categories, Deals, About
 - Search bar with autocomplete
 
@@ -196,7 +196,7 @@ CREATE TABLE settings (
 ## 6. File Structure
 
 ```
-IT-Trends/
+Daily Trends/
 ├── frontend/                 # Next.js app
 │   ├── app/
 │   │   ├── page.tsx          # Home page

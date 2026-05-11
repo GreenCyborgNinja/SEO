@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const category = await getCategory(slug)
   return {
     title: category?.name || slug,
-    description: `Entdecke die besten ${category?.name || slug} Deals bei IT-Trends.`,
+    description: `Entdecke die besten ${category?.name || slug} Deals bei Daily Trends.`,
   }
 }
 

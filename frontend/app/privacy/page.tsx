@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Datenschutz',
-  description: 'Datenschutzerklärung von IT-Trends - Wie wir deine Daten schützen.',
+  description: 'Datenschutzerklärung von Daily Trends - Wie wir deine Daten schützen.',
 }
 
 export default function PrivacyPage() {
@@ -18,8 +18,8 @@ export default function PrivacyPage() {
         
         <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">1. Verantwortlicher</h2>
         <p className="mb-4">
-          IT-Trends<br/>
-          E-Mail: info@it-trends.de
+          Daily Trends<br/>
+          E-Mail: info@daily-trends.de
         </p>
         
         <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">2. Erfassung allgemeiner Informationen</h2>

@@ -11,6 +11,24 @@ export const isConfigured = !!(supabaseUrl && supabaseAnonKey)
 
 export const MOCK_PRODUCTS: Product[] = [
   {
+    id: '12',
+    external_id: 'BOOK-001',
+    name: 'BGB - Bürgerliches Gesetzbuch (dtv-Textausgabe)',
+    description: 'Die maßgebliche Textausgabe des Bürgerlichen Gesetzbuchs. Dieser handliche Taschenbuchband enthält neben dem BGB auch wichtige Nebengesetze wie das EGBGB, AGG, ProdHaftG und WEG. Das Standardwerk für Jurastudierende, Rechtsanwälte und alle, die eine verlässliche, portable Ausgabe des deutschen Zivilrechts benötigen.',
+    seo_description: 'BGB - Bürgerliches Gesetzbuch (dtv-Textausgabe) - Die aktuelle Textausgabe des deutschen Zivilrechts. Ideal für Studium und Beruf.',
+    price: 8.90,
+    original_price: null,
+    affiliate_url: 'https://www.amazon.de/dp/3423533331',
+    image_url: 'https://m.media-amazon.com/images/I/81+20u6GvSL._SL1500_.jpg',
+    category: 'buecher',
+    brand: 'dtv',
+    rating: 4.6,
+    review_count: 845,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+  {
     id: '1',
     external_id: 'LAPTOP-001',
     name: 'Apple MacBook Pro 14" M3 Pro',
@@ -203,7 +221,8 @@ export const MOCK_CATEGORIES: Category[] = [
   { id: '1', name: 'Laptops', slug: 'laptops', description: 'Die besten Laptops' },
   { id: '2', name: 'Smartphones', slug: 'smartphones', description: 'Aktuelle Smartphones' },
   { id: '3', name: 'Gaming', slug: 'gaming', description: 'Gaming-Equipment' },
-  { id: '4', name: 'Zubehör', slug: 'zubehoer', description: 'Technisches Zubehör' }
+  { id: '4', name: 'Zubehör', slug: 'zubehoer', description: 'Technisches Zubehör' },
+  { id: '5', name: 'Bücher', slug: 'buecher', description: 'Die besten Bücher' }
 ]
 
 export interface Product {

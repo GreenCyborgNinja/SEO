@@ -86,7 +86,7 @@ export default function ContactPage() {
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-800 mb-2">Alternative Kontaktmöglichkeiten</h2>
           <p className="text-gray-600">
-            E-Mail: <a href="mailto:info@it-trends.de" className="text-primary hover:underline">info@it-trends.de</a>
+            E-Mail: <a href="mailto:info@daily-trends.de" className="text-primary hover:underline">info@daily-trends.de</a>
           </p>
         </div>
       </div>
