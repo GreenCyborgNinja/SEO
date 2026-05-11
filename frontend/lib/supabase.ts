@@ -19,7 +19,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 8.90,
     original_price: null,
     affiliate_url: 'https://www.amazon.de/dp/3423533331',
-    image_url: 'https://m.media-amazon.com/images/I/81+20u6GvSL._SL1500_.jpg',
+    image_url: 'https://images.booklooker.de/x/9783423533331/B%C3%BCrgerliches-Gesetzbuch-BGB.jpg',
     category: 'buecher',
     brand: 'dtv',
     rating: 4.6,
