@@ -173,7 +173,7 @@ async def fetch_products() -> List[Dict[str, Any]]:
     api_url = os.getenv('AFFILIATE_API_URL')
     api_key = os.getenv('AFFILIATE_API_KEY')
 
-    if api_url and api_key:
+    if api_url and api_key and api_url.startswith('http'):
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 api_url,
