@@ -53,7 +53,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
-          <p>© 2024 IT-Trends. Alle Rechte vorbehalten.</p>
+          <p>© 2026 IT-Trends. Alle Rechte vorbehalten.</p>
           <p className="mt-2 text-xs">
            Als Amazon-Partner verdienen wir an qualifizierten Käufen.
           </p>
