@@ -1,4 +1,4 @@
-# IT-Trends - Automated Affiliate Shop
+# Daily Trends - Automated Affiliate Shop
 
 SEO-optimized affiliate product shop with automated product syncing and AI-generated content.
 

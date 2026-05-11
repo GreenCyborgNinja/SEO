@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: product.name,
-    description: product.seo_description || product.description || `Kaufe ${product.name} zum besten Preis bei IT-Trends.`,
+    description: product.seo_description || product.description || `Kaufe ${product.name} zum besten Preis bei Daily Trends.`,
     openGraph: {
       title: product.name,
       description: product.seo_description || `Jetzt ${product.name} günstig kaufen`,

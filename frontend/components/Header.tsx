@@ -17,7 +17,7 @@ export default function Header() {
             <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center font-bold text-xl">
               IT
             </div>
-            <span className="text-xl font-bold hidden sm:block">IT-Trends</span>
+            <span className="text-xl font-bold hidden sm:block">Daily Trends</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">

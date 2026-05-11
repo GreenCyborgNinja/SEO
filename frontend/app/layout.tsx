@@ -5,15 +5,15 @@ import Footer from '@/components/Footer'
 
 export const metadata: Metadata = {
   title: {
-    default: 'IT-Trends - Dein Tech-Shop für aktuelle Deals',
-    template: '%s | IT-Trends',
+    default: 'Daily Trends - Dein Tech-Shop für aktuelle Deals',
+    template: '%s | Daily Trends',
   },
   description: 'Entdecke die besten IT-Deals und.tech-Produkte. Vergleiche Preise, finde günstige Angebote und kaufe über unsere Affiliate-Links.',
   keywords: ['IT Deals', 'Technik', 'Computer', 'Laptops', 'Gaming', 'Zubehör'],
   openGraph: {
     type: 'website',
     locale: 'de_DE',
-    siteName: 'IT-Trends',
+    siteName: 'Daily Trends',
   },
 }
 
