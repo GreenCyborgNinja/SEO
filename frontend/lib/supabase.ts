@@ -28,7 +28,6 @@ export const MOCK_PRODUCTS: Product[] = [
     updated_at: new Date().toISOString()
   },
   {
-  {
     id: '1',
     external_id: 'LAPTOP-001',
     name: 'Apple MacBook Pro 14" M3 Pro',
