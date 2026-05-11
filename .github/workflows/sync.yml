@@ -35,8 +35,7 @@ jobs:
       - name: Generate ad creatives
         run: |
           cd backend/ad_generator
-          pip install playwright
-          playwright install chromium
+          npm install
           node generate.js
 
       - name: Upload ad creatives

@@ -1,53 +1,51 @@
 # IT-Trends - Automated Affiliate Shop
 
-Voll-automatischer, SEO-optimierter Affiliate-Shop mit automatischem Produkt-Sync und KI-gestützter Content-Generierung.
+SEO-optimized affiliate product shop with automated product syncing and AI-generated content.
 
-## 🚀 Tech Stack (0 € Budget)
+## Tech Stack (Zero Cost)
 
-| Komponente | Technologie | Kosten |
-|------------|-------------|--------|
+| Component | Technology | Cost |
+|-----------|------------|------|
 | Frontend | Next.js 14 | Free |
-| Hosting | Vercel | Free Tier |
-| Datenbank | PostgreSQL (Supabase) | Free Tier |
+| Hosting | Vercel / Cloudflare Pages | Free Tier |
+| Database | PostgreSQL (Supabase) | Free Tier |
 | Scraping | Python | Free |
 | Automation | GitHub Actions | Free |
 | AI Content | Groq (Llama 3) | Free Tier |
-| Ad-Generierung | Puppeteer | Free |
 
-## 📁 Projektstruktur
-
-```
-IT-Trends/
-├── frontend/           # Next.js App
-│   ├── app/           # App Router Pages
-│   ├── components/    # React Components
-│   └── lib/          # Supabase Client
-│
-├── backend/           # Python Scripts
-│   ├── scraper/      # Produkt-Sync Pipeline
-│   └── ad_generator/ # Puppeteer Ad-Creatives
-│
-└── .github/
-    └── workflows/    # GitHub Actions
-```
-
-## 🛠️ Setup Anleitung
-
-### 1. Frontend (Next.js)
+## Quick Start
 
 ```bash
+# Frontend
 cd frontend
 npm install
 npm run dev
+
+# Backend (Python scraper)
+cd backend
+pip install -r requirements.txt
 ```
 
-### 2. Supabase Datenbank
+## Environment Setup
 
-1. Supabase-Projekt erstellen (supabase.com)
-2. SQL-Schema ausführen:
+Create `.env.local` in `/frontend`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
+
+Create `.env` in `/backend`:
+```env
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_KEY=your_service_key
+GROQ_API_KEY=your_groq_key
+```
+
+## Database Setup
+
+Run this SQL in Supabase SQL Editor:
 
 ```sql
--- Products Tabelle
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   external_id VARCHAR(255) UNIQUE,
@@ -66,7 +64,6 @@ CREATE TABLE products (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Categories Tabelle
 CREATE TABLE categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(100) NOT NULL UNIQUE,
@@ -74,56 +71,45 @@ CREATE TABLE categories (
   description TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
-
--- Seed-Daten
-INSERT INTO categories (name, slug, description) VALUES
-  ('Laptops', 'laptops', 'Die besten Laptops und Notebooks'),
-  ('Smartphones', 'smartphones', 'Aktuelle Smartphones und Handys'),
-  ('Gaming', 'gaming', 'Gaming-Equipment und Konsolen'),
-  ('Zubehör', 'zubehoer', 'Technisches Zubehör');
 ```
 
-### 3. Umgebungsvariablen
+## Deployment
 
-**.env.local (Frontend)**
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-NEXT_PUBLIC_SITE_URL=https://it-trends.de
+### Vercel (Recommended)
+1. Push to GitHub
+2. Import project in [vercel.com](https://vercel.com)
+3. Add environment variables
+4. Deploy
+
+### Cloudflare Pages
+1. Connect GitHub repository
+2. Build command: `npm run build`
+3. Output directory: `.next`
+
+## Project Structure
+
+```
+SEO/
+├── frontend/           # Next.js app
+│   ├── app/           # Pages
+│   ├── components/    # React components
+│   └── lib/           # Utilities
+├── backend/           # Python scripts
+│   ├── scraper/      # Product sync
+│   └── ad_generator/ # Ad creatives
+└── .github/workflows/ # CI/CD
 ```
 
-**.env (Backend)**
-```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_KEY=your_service_key
-GROQ_API_KEY=your_groq_key
-```
+## Features
 
-### 4. GitHub Actions Secrets
+- Server-side rendering for SEO
+- Incremental Static Regeneration (ISR)
+- JSON-LD structured data
+- Sitemap generation
+- Category filtering
+- Search functionality
+- Mobile responsive
 
-Im GitHub Repository Settings:
-- SUPABASE_URL
-- SUPABASE_SERVICE_KEY
-- GROQ_API_KEY (optional)
+## License
 
-## 🔄 Pipeline
-
-1. **GitHub Actions** triggert alle 12 Stunden
-2. **Python Script** fetcht Produkte von Affiliate-API
-3. **Groq/Llama 3** generiert SEO-Texte
-4. **Supabase** speichert/updated Produkte
-5. **Puppeteer** generiert Ad-Creatives
-6. **Next.js** (ISR) zeigt aktualisierte Produkte
-
-## 📊 SEO Features
-
-- Server-Side Rendering (SSR)
-- JSON-LD Structured Data
-- Dynamische Meta-Tags
-- Sitemap.xml
-- Open Graph Tags
-- Semantic HTML
-
-## 📝 Lizenz
-
-MIT License - Nutzung auf eigene Verantwortung.
+MIT
