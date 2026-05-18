@@ -2,8 +2,8 @@ name: Product Sync Pipeline
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # Every 12 hours
-  workflow_dispatch:  # Manual trigger
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -23,13 +23,13 @@ jobs:
           cd backend
           pip install -r requirements.txt
 
-      - name: Run product sync
+      - name: Run product sync via RapidAPI
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          AFFILIATE_API_URL: ${{ secrets.AFFILIATE_API_URL }}
-          AFFILIATE_API_KEY: ${{ secrets.AFFILIATE_API_KEY }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          RAPIDAPI_COUNTRY: ${{ vars.RAPIDAPI_COUNTRY }}
         run: cd backend/scraper && python main.py
 
       - name: Generate ad creatives

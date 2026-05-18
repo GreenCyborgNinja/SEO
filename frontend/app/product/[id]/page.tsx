@@ -1,7 +1,13 @@
 import { Metadata } from 'next'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { supabase, isConfigured, MOCK_PRODUCTS, type Product } from '@/lib/supabase'
+import {
+  supabase,
+  isConfigured,
+  isRapidAPIConfigured,
+  getProductDetails,
+  type Product,
+} from '@/lib/supabase'
 import { formatPrice, calculateSavings } from '@/lib/utils'
 
 interface PageProps {
@@ -9,16 +15,19 @@ interface PageProps {
 }
 
 async function getProduct(id: string): Promise<Product | null> {
-  if (!isConfigured) {
-    return MOCK_PRODUCTS.find(p => p.id === id) || null
+  if (isConfigured) {
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (data) return data as Product
   }
-  const { data } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  return data
+  if (isRapidAPIConfigured) {
+    const product = await getProductDetails(id)
+    if (product) return product
+  }
+  return null
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -139,7 +148,7 @@ export default async function ProductPage({ params }: PageProps) {
                 {formatPrice(product.price)}
               </span>
               <small className="block text-xs text-gray-400 mt-1">
-                Preis zuletzt aktualisiert am: {product.updated_at ? new Date(product.updated_at).toLocaleString('de-DE') : 'unbekannt'}. Preise und Verfügbarkeit sind zum angegebenen Zeitpunkt genau und können sich ändern.
+                Preise und Verfügbarkeit sind zum angegebenen Zeitpunkt genau und können sich ändern.
               </small>
               {product.original_price && (
                 <>

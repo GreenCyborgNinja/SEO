@@ -1,5 +1,13 @@
 import { Metadata } from 'next'
-import { supabase, isConfigured, MOCK_PRODUCTS, MOCK_CATEGORIES, type Product, type Category } from '@/lib/supabase'
+import {
+  supabase,
+  isConfigured,
+  isRapidAPIConfigured,
+  CATEGORIES,
+  searchProducts,
+  type Product,
+  type Category,
+} from '@/lib/supabase'
 import ProductCard from '@/components/ProductCard'
 import CategoryFilter from '@/components/CategoryFilter'
 
@@ -7,35 +15,57 @@ interface PageProps {
   params: { slug: string }
 }
 
-async function getCategory(slug: string): Promise<Category | null> {
-  if (!isConfigured) {
-    return MOCK_CATEGORIES.find(c => c.slug === slug) || null
-  }
-  const { data } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('slug', slug)
-    .single()
+const QUERY_MAP: Record<string, string> = {
+  laptops: 'Laptop',
+  smartphones: 'Smartphone',
+  gaming: 'Gaming',
+  zubehoer: 'Zubehör Elektronik',
+  buecher: 'Bücher Bestseller',
+  computer: 'Computer PC',
+  elektronik: 'Elektronik',
+  'kamera-foto': 'Kamera',
+  'smart-home': 'Smart Home',
+  'tv-heimkino': 'Fernseher',
+  musik: 'Musik Lautsprecher',
+  kueche: 'Küche',
+  haushalt: 'Haushalt',
+  garten: 'Garten',
+  baumarkt: 'Baumarkt',
+  sport: 'Sport',
+  spielzeug: 'Spielzeug',
+  beauty: 'Beauty',
+  baby: 'Baby',
+  haustier: 'Haustier',
+  kleidung: 'Kleidung',
+  schuhe: 'Schuhe',
+  lebensmittel: 'Lebensmittel',
+  auto: 'Auto',
+}
 
-  return data
+function getCategory(slug: string): Category | null {
+  return CATEGORIES.find(c => c.slug === slug) || null
 }
 
 async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
-  if (!isConfigured) {
-    return MOCK_PRODUCTS.filter(p => p.category === categorySlug)
+  if (isConfigured) {
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('category', categorySlug)
+      .order('price', { ascending: true })
+    if (data && data.length > 0) return data as Product[]
   }
-  const { data } = await supabase
-    .from('products')
-    .select('*')
-    .eq('category', categorySlug)
-    .order('price', { ascending: true })
-
-  return data || []
+  if (isRapidAPIConfigured) {
+    const query = QUERY_MAP[categorySlug] || categorySlug
+    const result = await searchProducts({ query, country: 'DE', page: 1, sort_by: 'RELEVANCE' })
+    if (result.products.length > 0) return result.products
+  }
+  return []
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const category = await getCategory(slug)
+  const category = getCategory(slug)
   return {
     title: category?.name || slug,
     description: `Entdecke die besten ${category?.name || slug} Deals bei Daily Trends.`,
@@ -46,7 +76,7 @@ export const revalidate = 3600
 
 export default async function CategoryPage({ params }: PageProps) {
   const { slug } = await params
-  const category = await getCategory(slug)
+  const category = getCategory(slug)
   const products = await getProductsByCategory(slug)
 
   const categoryNames: Record<string, string> = {

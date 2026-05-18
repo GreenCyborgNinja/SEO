@@ -25,6 +25,6 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          AFFILIATE_API_URL: ${{ secrets.AFFILIATE_API_URL }}
-          AFFILIATE_API_KEY: ${{ secrets.AFFILIATE_API_KEY }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          RAPIDAPI_COUNTRY: ${{ vars.RAPIDAPI_COUNTRY }}
         run: python backend/scraper/main.py
