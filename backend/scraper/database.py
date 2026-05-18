@@ -1,61 +1,81 @@
 import os
-from dotenv import load_dotenv
-from supabase import create_client, Client
-from typing import List, Dict, Any
-
-load_dotenv()
+import json
+from datetime import datetime
+from typing import List, Dict, Any, Optional
 
 supabase_url = os.getenv('SUPABASE_URL')
 supabase_key = os.getenv('SUPABASE_SERVICE_KEY')
 
-if not supabase_url or not supabase_key:
-    raise ValueError("Missing SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables")
+supabase: Optional[Any] = None
 
-supabase: Client = create_client(supabase_url, supabase_key)
+if supabase_url and supabase_key:
+    try:
+        from supabase import create_client
+        supabase = create_client(supabase_url, supabase_key)
+        print("Supabase connected")
+    except Exception as e:
+        print(f"Supabase init error: {e}")
+else:
+    print("Supabase not configured — using local JSON storage")
+
+BASE_DIR = os.path.dirname(__file__)
+
+def _save_local_json(products: List[Dict[str, Any]]) -> None:
+    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    ts_path = os.path.join(BASE_DIR, f'products_{ts}.json')
+    with open(ts_path, 'w', encoding='utf-8') as f:
+        json.dump(products, f, indent=2, ensure_ascii=False)
+    print(f"Saved {len(products)} products to {ts_path}")
+    latest_path = os.path.join(BASE_DIR, 'latest-products.json')
+    with open(latest_path, 'w', encoding='utf-8') as f:
+        json.dump(products, f, indent=2, ensure_ascii=False)
+    print(f"Also saved to {latest_path}")
+
+def _load_local_json() -> List[Dict[str, Any]]:
+    latest = os.path.join(BASE_DIR, 'latest-products.json')
+    if os.path.exists(latest):
+        with open(latest, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
 
 async def upsert_products(products: List[Dict[str, Any]]) -> None:
-    """Insert or update products in the database"""
     if not products:
         return
 
-    for product in products:
-        product['updated_at'] = 'now()'
+    if supabase:
+        try:
+            for product in products:
+                product['updated_at'] = 'now()'
+            response = supabase.table('products').upsert(products, on_conflict='external_id').execute()
+            print(f"Upserted {len(products)} products to Supabase")
+            return response
+        except Exception as e:
+            print(f"Supabase error: {e}")
 
-    try:
-        response = supabase.table('products').upsert(
-            products,
-            on_conflict='external_id'
-        ).execute()
-
-        print(f"Upserted {len(products)} products")
-        return response
-
-    except Exception as e:
-        print(f"Database error: {e}")
-        raise
-
-async def get_products_without_seo() -> List[Dict[str, Any]]:
-    """Get products that don't have SEO descriptions yet"""
-    try:
-        response = supabase.table('products').select('*').is_('seo_description', None).execute()
-        return response.data or []
-    except Exception as e:
-        print(f"Query error: {e}")
-        return []
+    _save_local_json(products)
 
 async def get_all_products() -> List[Dict[str, Any]]:
-    """Get all products from database"""
-    try:
-        response = supabase.table('products').select('*').execute()
-        return response.data or []
-    except Exception as e:
-        print(f"Query error: {e}")
-        return []
+    if supabase:
+        try:
+            response = supabase.table('products').select('*').execute()
+            return response.data or []
+        except Exception as e:
+            print(f"Supabase query error: {e}")
+    return _load_local_json()
+
+async def get_products_without_seo() -> List[Dict[str, Any]]:
+    if supabase:
+        try:
+            response = supabase.table('products').select('*').is_('seo_description', None).execute()
+            return response.data or []
+        except Exception as e:
+            print(f"Supabase query error: {e}")
+    return []
 
 async def delete_product(external_id: str) -> None:
-    """Delete a product by external_id"""
-    try:
-        supabase.table('products').delete().eq('external_id', external_id).execute()
-        print(f"Deleted product: {external_id}")
-    except Exception as e:
-        print(f"Delete error: {e}")
+    if supabase:
+        try:
+            supabase.table('products').delete().eq('external_id', external_id).execute()
+            print(f"Deleted product: {external_id}")
+        except Exception as e:
+            print(f"Delete error: {e}")

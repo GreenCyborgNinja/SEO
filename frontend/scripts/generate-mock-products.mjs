@@ -34,6 +34,24 @@ function findLatestScraperOutput() {
   return files.length > 0 ? join(SCRAPER_DIR, files[0]) : null
 }
 
+const CATEGORY_KEYWORDS = [
+  { slug: 'laptops', keywords: ['laptop', 'notebook', 'thinkpad', 'vivobook', 'ideapad', 'macbook', 'xps', 'inspiron', 'surface', 'chromebook', 'gaming pc', 'desktop', 'rechner', 'computer', 'monitor', 'bildschirm', 'drucker', 'scanner'] },
+  { slug: 'smartphones', keywords: ['smartphone', 'iphone', 'samsung galaxy', 'pixel', 'xiaomi', 'handy', 'redmi', 'poco', 'oneplus', 'huawei', 'nokia', 'moto g', 'smartwatch', 'apple watch', 'fitnessuhr', 'smart band', 'amazfit', 'tracker'] },
+  { slug: 'gaming', keywords: ['gaming', 'playstation', 'ps5', 'xbox', 'nintendo', 'switch', 'controller', 'headset', 'mauspad', 'gamer', 'esports', 'rgb', 'lenkrad', 'joystick', 'pc spiele', 'konsole'] },
+  { slug: 'zubehoer', keywords: ['kopfhörer', 'kabel', 'ladegerät', 'powerbank', 'hülle', 'case', 'tasche', 'schutzfolie', 'maus', 'tastatur', 'webcam', 'lautsprecher', 'speaker', 'soundbar', 'router', 'festplatte', 'ssd', 'usb', 'hub', 'adapter', 'halterung', 'ständer', 'lampe', 'licht', 'akku', 'batterie', 'kamera', 'objektiv', 'stativ', 'tablet', 'ipad', 'kindle', 'e-reader', 'fernbedienung', 'empfänger'] },
+  { slug: 'buecher', keywords: ['buch', 'bücher', 'taschenbuch', 'hardcover', 'ratgeber', 'roman', 'krimi', 'sachbuch', 'kochbuch', 'kinderbuch', 'hörbuch', 'lektüre', 'bestseller', 'autobiografie'] },
+]
+
+function assignCategory(name, brand) {
+  const text = ((name || '') + ' ' + (brand || '')).toLowerCase()
+  for (const cat of CATEGORY_KEYWORDS) {
+    for (const kw of cat.keywords) {
+      if (text.includes(kw)) return cat.slug
+    }
+  }
+  return 'zubehoer'
+}
+
 function normalizeRating(rating) {
   if (rating == null) return null
   const n = typeof rating === 'string' ? parseFloat(rating) : rating
@@ -43,6 +61,7 @@ function normalizeRating(rating) {
 
 function transformScraperProduct(p, index) {
   const now = new Date().toISOString()
+  const category = p.category || assignCategory(p.name, p.brand)
   return {
     id: p.external_id || String(index + 1),
     external_id: p.external_id || '',
@@ -53,7 +72,7 @@ function transformScraperProduct(p, index) {
     original_price: p.original_price != null ? (typeof p.original_price === 'number' ? p.original_price : parseFloat(p.original_price) || 0) : null,
     affiliate_url: p.affiliate_url || '',
     image_url: p.image_url || null,
-    category: p.category || null,
+    category,
     brand: p.brand || null,
     rating: normalizeRating(p.rating),
     review_count: typeof p.review_count === 'number' ? p.review_count : parseInt(p.review_count, 10) || 0,

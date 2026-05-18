@@ -1,4 +1,5 @@
 import os
+import re
 import httpx
 from typing import List, Dict, Any, Optional
 
@@ -194,52 +195,95 @@ async def product_category_list(country: str = "DE") -> List[Dict[str, Any]]:
         return data.get("data", []) or []
 
 
+import re
+
+
+def _parse_price(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, dict):
+        if "amount" in value:
+            return _parse_price(value["amount"])
+        return None
+    cleaned = re.sub(r'[^\d,.\-]', '', str(value))
+    if not cleaned:
+        return 0
+    if cleaned.count(",") > 0:
+        cleaned = cleaned.replace(".", "").replace(",", ".")
+    try:
+        return float(cleaned)
+    except (ValueError, TypeError):
+        return 0
+
+
+def _parse_int(value: Any) -> int:
+    if value is None:
+        return 0
+    if isinstance(value, (int, float)):
+        return int(value)
+    try:
+        return int(re.sub(r'[^\d]', '', str(value)) or 0)
+    except (ValueError, TypeError):
+        return 0
+
+
 def transform_rapidapi_product(product: Dict[str, Any], category: Optional[str] = None) -> Dict[str, Any]:
+    price = _parse_price(product.get("product_price"))
+    original_price = _parse_price(product.get("product_original_price"))
+    rating = _parse_price(product.get("product_star_rating"))
     return {
         "external_id": product.get("asin", ""),
         "name": product.get("product_title", ""),
         "description": product.get("product_description", ""),
         "seo_description": None,
-        "price": float(product.get("product_price", 0) or 0),
-        "original_price": float(product.get("product_original_price", 0) or 0) or None,
+        "price": price or 0,
+        "original_price": original_price if original_price and original_price > 0 else None,
         "affiliate_url": product.get("product_url", ""),
         "image_url": product.get("product_photo", ""),
         "category": category or product.get("category_path", "").split(">")[0].strip() if product.get("category_path") else None,
         "brand": product.get("product_details", {}).get("brand") if isinstance(product.get("product_details"), dict) else None,
-        "rating": float(product.get("product_star_rating", 0) or 0) or None,
-        "review_count": int(product.get("product_num_ratings", 0) or 0),
+        "rating": rating if rating and rating > 0 else None,
+        "review_count": _parse_int(product.get("product_num_ratings")),
     }
 
 
 def transform_rapidapi_deal(deal: Dict[str, Any]) -> Dict[str, Any]:
+    price = _parse_price(deal.get("deal_price"))
+    original_price = _parse_price(deal.get("list_price"))
+    rating = _parse_price(deal.get("deal_star_rating"))
     return {
         "external_id": deal.get("deal_id", ""),
         "name": deal.get("deal_title", ""),
         "description": deal.get("deal_description", ""),
         "seo_description": None,
-        "price": float(deal.get("deal_price", {}).get("price", 0) or 0) if isinstance(deal.get("deal_price"), dict) else float(deal.get("deal_price", 0) or 0),
-        "original_price": float(deal.get("list_price", 0) or 0) or None,
+        "price": price or 0,
+        "original_price": original_price if original_price and original_price > 0 else None,
         "affiliate_url": deal.get("deal_url", ""),
         "image_url": deal.get("deal_photo", ""),
         "category": deal.get("deal_category", ""),
         "brand": None,
-        "rating": float(deal.get("deal_star_rating", 0) or 0) or None,
-        "review_count": int(deal.get("deal_num_ratings", 0) or 0),
+        "rating": rating if rating and rating > 0 else None,
+        "review_count": _parse_int(deal.get("deal_num_ratings")),
     }
 
 
 def transform_rapidapi_best_seller(product: Dict[str, Any], category: Optional[str] = None) -> Dict[str, Any]:
+    price = _parse_price(product.get("product_price"))
+    original_price = _parse_price(product.get("list_price"))
+    rating = _parse_price(product.get("product_star_rating"))
     return {
         "external_id": product.get("asin", ""),
         "name": product.get("product_title", ""),
         "description": product.get("product_description", ""),
         "seo_description": None,
-        "price": float(product.get("product_price", 0) or 0),
-        "original_price": float(product.get("list_price", 0) or 0) or None,
+        "price": price or 0,
+        "original_price": original_price if original_price and original_price > 0 else None,
         "affiliate_url": product.get("product_url", ""),
         "image_url": product.get("product_photo", ""),
         "category": category or product.get("category_path", "").split(">")[0].strip() if product.get("category_path") else None,
         "brand": None,
-        "rating": float(product.get("product_star_rating", 0) or 0) or None,
-        "review_count": int(product.get("product_num_ratings", 0) or 0),
+        "rating": rating if rating and rating > 0 else None,
+        "review_count": _parse_int(product.get("product_num_ratings")),
     }

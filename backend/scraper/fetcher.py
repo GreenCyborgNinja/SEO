@@ -11,21 +11,21 @@ from rapidapi_client import (
 )
 
 SEARCH_QUERIES = [
-    "Laptop",
-    "Smartphone",
-    "Kopfhörer",
-    "Gaming",
-    "Tablet",
-    "Smartwatch",
-    "Monitor",
-    "Drucker",
-    "Maus",
-    "Tastatur",
-    "Router",
-    "Festplatte",
-    "USB-C Hub",
-    "Webcam",
-    "Lautsprecher",
+    ("Laptop", 3),
+    ("Smartphone", 3),
+    ("Kopfhörer", 2),
+    ("Gaming", 3),
+    ("Tablet", 2),
+    ("Smartwatch", 2),
+    ("Monitor", 1),
+    ("Drucker", 1),
+    ("Maus", 1),
+    ("Tastatur", 1),
+    ("Router", 1),
+    ("Festplatte", 1),
+    ("USB-C Hub", 1),
+    ("Webcam", 1),
+    ("Lautsprecher", 1),
 ]
 
 BEST_SELLER_CATEGORIES = [
@@ -34,6 +34,11 @@ BEST_SELLER_CATEGORIES = [
     "software",
     "video-games",
     "office-products",
+    "photo",
+    "musical-instruments",
+    "kitchen",
+    "sports",
+    "books",
 ]
 
 COUNTRY = os.getenv("RAPIDAPI_COUNTRY", "DE")
@@ -43,23 +48,28 @@ async def fetch_products() -> List[Dict[str, Any]]:
     products = []
     seen_asins = set()
 
-    for query in SEARCH_QUERIES:
-        try:
-            print(f"Searching: {query} (country={COUNTRY})...")
-            results = await search_products(
-                query=query,
-                country=COUNTRY,
-                page=1,
-                sort_by="RELEVANCE",
-            )
-            for item in results:
-                asin = item.get("asin")
-                if asin and asin not in seen_asins:
-                    seen_asins.add(asin)
-                    products.append(transform_rapidapi_product(item))
-            print(f"  Got {len(results)} results, total unique: {len(products)}")
-        except Exception as e:
-            print(f"  Search error for '{query}': {e}")
+    for query, pages in SEARCH_QUERIES:
+        for page in range(1, pages + 1):
+            try:
+                print(f"Searching: {query} (page {page}/{pages}, country={COUNTRY})...")
+                results = await search_products(
+                    query=query,
+                    country=COUNTRY,
+                    page=page,
+                    sort_by="RELEVANCE",
+                )
+                if not results:
+                    print(f"  No more results for '{query}' at page {page}")
+                    break
+                for item in results:
+                    asin = item.get("asin")
+                    if asin and asin not in seen_asins:
+                        seen_asins.add(asin)
+                        products.append(transform_rapidapi_product(item))
+                print(f"  Got {len(results)} results, total unique: {len(products)}")
+            except Exception as e:
+                print(f"  Search error for '{query}' page {page}: {e}")
+                break
 
     for cat in BEST_SELLER_CATEGORIES:
         try:
