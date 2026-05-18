@@ -19,6 +19,7 @@ export default function Footer() {
               <li><Link href="/category/smartphones" className="hover:text-white">Smartphones</Link></li>
               <li><Link href="/category/gaming" className="hover:text-white">Gaming</Link></li>
               <li><Link href="/category/zubehoer" className="hover:text-white">Zubehör</Link></li>
+              <li><Link href="/deals" className="hover:text-accent font-semibold">Deals & Angebote</Link></li>
             </ul>
           </div>
 

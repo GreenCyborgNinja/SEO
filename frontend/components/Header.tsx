@@ -6,6 +6,7 @@ const categories = [
   { name: 'Smartphones', slug: 'smartphones' },
   { name: 'Gaming', slug: 'gaming' },
   { name: 'Zubehör', slug: 'zubehoer' },
+  { name: 'Deals', slug: 'deals' },
 ]
 
 export default function Header() {
@@ -24,8 +25,10 @@ export default function Header() {
             {categories.map((cat) => (
               <Link
                 key={cat.slug}
-                href={`/category/${cat.slug}`}
-                className="hover:text-accent transition-colors text-sm font-medium"
+                href={cat.slug === 'deals' ? '/deals' : `/category/${cat.slug}`}
+                className={cat.slug === 'deals'
+                  ? 'bg-accent text-white px-3 py-1 rounded-full text-sm font-bold hover:brightness-110 transition'
+                  : 'hover:text-accent transition-colors text-sm font-medium'}
               >
                 {cat.name}
               </Link>

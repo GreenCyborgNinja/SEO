@@ -34,17 +34,10 @@ export default async function HomePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <section className="mb-12 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
+      <section className="mb-12 text-center max-w-4xl mx-auto">
+        <h1 className="text-4xl md:text-5xl font-bold text-primary mb-6">
           Daily Trends
         </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Die aktuellsten Tech-Deals und Produkte von Amazon – in Echtzeit von der RapidAPI.
-        </p>
-      </section>
-
-      <section className="mb-12 max-w-4xl mx-auto text-center">
-        <h2 className="text-2xl font-semibold text-primary mb-4">So findest du die besten Deals bei Daily Trends</h2>
         <div className="text-gray-600 space-y-4 text-left">
           <p>
             Unser Team aus erfahrenen Tech-Experten durchkämmt täglich die Angebote von Amazon und anderen namhaften Händlern, um dir die attraktivsten Deals zu präsentieren. Dabei achten wir nicht nur auf den Preis, sondern bewerten auch Produktbewertungen, technische Spezifikationen und das Preis-Leistungs-Verhältnis, um sicherzustellen, dass du nur die wirklich lohnenswerten Angebote findest.
@@ -58,7 +51,16 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <CategoryFilter />
+      <hr className="border-gray-200 mb-10" />
+
+      <section>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-primary">Alle Produkte</h2>
+          <span className="text-sm text-gray-500">{products.length} Produkte</span>
+        </div>
+
+        <CategoryFilter />
+      </section>
 
       {products.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

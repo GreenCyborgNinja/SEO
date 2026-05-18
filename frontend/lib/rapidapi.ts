@@ -48,16 +48,17 @@ interface RapidAPIProduct {
   brand?: string
 }
 
-function transformProduct(item: RapidAPIProduct): Product {
-  const price = typeof item.product_price === 'string'
-    ? parseFloat(item.product_price.replace(/[^0-9.,]/g, '').replace(',', '.'))
-    : (item.product_price as number) || 0
+function parseGermanPrice(value: string | number | undefined | null): number {
+  if (value == null) return 0
+  if (typeof value === 'number') return value
+  const cleaned = value.replace(/[^0-9.,]/g, '')
+  const normalized = cleaned.replace(/\./g, '').replace(',', '.')
+  return parseFloat(normalized) || 0
+}
 
-  const originalPrice = item.product_original_price
-    ? (typeof item.product_original_price === 'string'
-        ? parseFloat(item.product_original_price.replace(/[^0-9.,]/g, '').replace(',', '.'))
-        : (item.product_original_price as number)) || 0
-    : null
+function transformProduct(item: RapidAPIProduct): Product {
+  const price = parseGermanPrice(item.product_price)
+  const originalPrice = item.product_original_price ? parseGermanPrice(item.product_original_price) : 0
 
   const rating = item.product_star_rating
     ? parseFloat(String(item.product_star_rating))
@@ -276,6 +277,14 @@ export interface Deal {
   deal_category?: string
 }
 
+function extractPrice(val: any): number | undefined {
+  if (val == null) return undefined
+  if (typeof val === 'number') return val
+  if (typeof val === 'object' && val.amount != null) return val.amount
+  const n = parseFloat(String(val))
+  return isNaN(n) ? undefined : n
+}
+
 export async function getDeals(
   country = 'DE',
   min_rating = 'ALL',
@@ -294,8 +303,8 @@ export async function getDeals(
       deal_title: d.deal_title || '',
       deal_url: d.deal_url || '',
       deal_photo: d.deal_photo || null,
-      deal_price: d.deal_price ? parseFloat(String(d.deal_price)) : undefined,
-      list_price: d.list_price ? parseFloat(String(d.list_price)) : undefined,
+      deal_price: extractPrice(d.deal_price),
+      list_price: extractPrice(d.list_price),
       deal_category: d.deal_category || undefined,
     }))
   } catch {
