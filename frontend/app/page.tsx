@@ -1,31 +1,12 @@
-import {
-  supabase,
-  isConfigured,
-  MOCK_PRODUCTS,
-  searchProducts,
-  fetchDeals,
-  type Product,
-} from '@/lib/supabase'
+import { fetchAllAvailableProducts, type Product } from '@/lib/supabase'
 import ProductCard from '@/components/ProductCard'
 import CategoryFilter from '@/components/CategoryFilter'
 
-async function getProducts(): Promise<Product[]> {
-  if (isConfigured) {
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20)
-    if (data && data.length > 0) return data as Product[]
-  }
-  const deals = await fetchDeals()
-  if (deals.length > 0) return deals
-  const result = await searchProducts({ query: 'tech', country: 'DE', page: 1 })
-  if (result.products.length > 0) return result.products.slice(0, 20)
-  return MOCK_PRODUCTS
-}
+export const dynamic = 'force-static'
 
-export const revalidate = 86400
+async function getProducts(): Promise<Product[]> {
+  return fetchAllAvailableProducts()
+}
 
 export default async function HomePage() {
   const products = await getProducts()

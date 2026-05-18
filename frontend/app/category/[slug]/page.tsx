@@ -1,10 +1,7 @@
 import { Metadata } from 'next'
 import {
-  supabase,
-  isConfigured,
   CATEGORIES,
   MOCK_PRODUCTS,
-  searchProducts,
   type Product,
   type Category,
 } from '@/lib/supabase'
@@ -15,32 +12,13 @@ interface PageProps {
   params: { slug: string }
 }
 
-const QUERY_MAP: Record<string, string> = {
-  laptops: 'Laptop',
-  smartphones: 'Smartphone',
-  gaming: 'Gaming',
-  zubehoer: 'Zubehör',
-  buecher: 'Bücher',
-}
-
 function getCategory(slug: string): Category | null {
   return CATEGORIES.find(c => c.slug === slug) || null
 }
 
 async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
-  if (isConfigured) {
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .eq('category', categorySlug)
-      .order('price', { ascending: true })
-    if (data && data.length > 0) return data as Product[]
-  }
   const mock = MOCK_PRODUCTS.filter(p => p.category === categorySlug)
   if (mock.length > 0) return mock
-  const query = QUERY_MAP[categorySlug] || categorySlug
-  const result = await searchProducts({ query, country: 'DE', page: 1, sort_by: 'RELEVANCE' })
-  if (result.products.length > 0) return result.products
   return MOCK_PRODUCTS
 }
 
@@ -53,7 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export const revalidate = 86400
+export const dynamic = 'force-static'
 
 export default async function CategoryPage({ params }: PageProps) {
   const { slug } = await params

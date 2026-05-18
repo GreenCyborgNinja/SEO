@@ -1,28 +1,10 @@
 import { MetadataRoute } from 'next'
-import { supabase, isConfigured, MOCK_PRODUCTS, searchProducts } from '@/lib/supabase'
+import { MOCK_PRODUCTS } from '@/lib/supabase'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://daily-trends.de'
 
-  let productIds: { id: string; updated_at: string }[] = []
-
-  if (isConfigured) {
-    const { data } = await supabase.from('products').select('id, updated_at')
-    productIds = (data || []).map((p: any) => ({ id: p.id, updated_at: p.updated_at }))
-  }
-
-  if (productIds.length === 0) {
-    productIds = MOCK_PRODUCTS.map((p) => ({ id: p.id, updated_at: p.updated_at }))
-  }
-
-  if (productIds.length === 0) {
-    try {
-      const result = await searchProducts({ query: 'tech', country: 'DE', page: 1 })
-      productIds = result.products.map((p) => ({ id: p.id, updated_at: new Date().toISOString() }))
-    } catch {
-      // empty sitemap is acceptable
-    }
-  }
+  const productIds = MOCK_PRODUCTS.map((p) => ({ id: p.id, updated_at: p.updated_at }))
 
   const productUrls = productIds.map((product) => ({
     url: `${baseUrl}/product/${product.id}`,

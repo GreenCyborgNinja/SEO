@@ -2,10 +2,7 @@ import { Metadata } from 'next'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import {
-  supabase,
-  isConfigured,
   MOCK_PRODUCTS,
-  getProductDetails,
   type Product,
 } from '@/lib/supabase'
 import { formatPrice, calculateSavings } from '@/lib/utils'
@@ -14,18 +11,14 @@ interface PageProps {
   params: { id: string }
 }
 
+export const dynamic = 'force-static'
+
+export function generateStaticParams() {
+  return MOCK_PRODUCTS.map((p) => ({ id: p.id }))
+}
+
 async function getProduct(id: string): Promise<Product | null> {
-  if (isConfigured) {
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', id)
-      .single()
-    if (data) return data as Product
-  }
-  const mock = MOCK_PRODUCTS.find(p => p.id === id)
-  if (mock) return mock
-  return getProductDetails(id)
+  return MOCK_PRODUCTS.find(p => p.id === id || p.external_id === id) || null
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

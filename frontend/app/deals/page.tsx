@@ -1,9 +1,5 @@
 import type { Metadata } from 'next'
-import {
-  MOCK_PRODUCTS,
-  getDeals,
-  type Product,
-} from '@/lib/supabase'
+import { fetchDeals, type Product } from '@/lib/supabase'
 import ProductCard from '@/components/ProductCard'
 
 export const metadata: Metadata = {
@@ -12,31 +8,10 @@ export const metadata: Metadata = {
 }
 
 async function getDealProducts(): Promise<Product[]> {
-  const deals = await getDeals('DE', 'ALL', 'ALL', 'ALL')
-  if (deals.length > 0) {
-    return deals.map((d) => ({
-      id: d.deal_id,
-      external_id: d.deal_id,
-      name: d.deal_title,
-      description: null,
-      seo_description: null,
-      price: d.deal_price || 0,
-      original_price: d.list_price || null,
-      affiliate_url: d.deal_url,
-      image_url: d.deal_photo || null,
-      category: d.deal_category || 'deals',
-      brand: null,
-      rating: null,
-      review_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }))
-  }
-  const discounted = MOCK_PRODUCTS.filter(p => p.original_price != null)
-  return discounted.length > 0 ? discounted : MOCK_PRODUCTS
+  return fetchDeals()
 }
 
-export const revalidate = 86400
+export const dynamic = 'force-static'
 
 export default async function DealsPage() {
   const products = await getDealProducts()
