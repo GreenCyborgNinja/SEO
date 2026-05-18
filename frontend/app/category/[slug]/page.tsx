@@ -2,8 +2,8 @@ import { Metadata } from 'next'
 import {
   supabase,
   isConfigured,
-  isRapidAPIConfigured,
   CATEGORIES,
+  MOCK_PRODUCTS,
   searchProducts,
   type Product,
   type Category,
@@ -19,27 +19,8 @@ const QUERY_MAP: Record<string, string> = {
   laptops: 'Laptop',
   smartphones: 'Smartphone',
   gaming: 'Gaming',
-  zubehoer: 'Zubehör Elektronik',
-  buecher: 'Bücher Bestseller',
-  computer: 'Computer PC',
-  elektronik: 'Elektronik',
-  'kamera-foto': 'Kamera',
-  'smart-home': 'Smart Home',
-  'tv-heimkino': 'Fernseher',
-  musik: 'Musik Lautsprecher',
-  kueche: 'Küche',
-  haushalt: 'Haushalt',
-  garten: 'Garten',
-  baumarkt: 'Baumarkt',
-  sport: 'Sport',
-  spielzeug: 'Spielzeug',
-  beauty: 'Beauty',
-  baby: 'Baby',
-  haustier: 'Haustier',
-  kleidung: 'Kleidung',
-  schuhe: 'Schuhe',
-  lebensmittel: 'Lebensmittel',
-  auto: 'Auto',
+  zubehoer: 'Zubehör',
+  buecher: 'Bücher',
 }
 
 function getCategory(slug: string): Category | null {
@@ -55,12 +36,12 @@ async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
       .order('price', { ascending: true })
     if (data && data.length > 0) return data as Product[]
   }
-  if (isRapidAPIConfigured) {
-    const query = QUERY_MAP[categorySlug] || categorySlug
-    const result = await searchProducts({ query, country: 'DE', page: 1, sort_by: 'RELEVANCE' })
-    if (result.products.length > 0) return result.products
-  }
-  return []
+  const mock = MOCK_PRODUCTS.filter(p => p.category === categorySlug)
+  if (mock.length > 0) return mock
+  const query = QUERY_MAP[categorySlug] || categorySlug
+  const result = await searchProducts({ query, country: 'DE', page: 1, sort_by: 'RELEVANCE' })
+  if (result.products.length > 0) return result.products
+  return MOCK_PRODUCTS
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -72,7 +53,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export const revalidate = 3600
+export const revalidate = 86400
 
 export default async function CategoryPage({ params }: PageProps) {
   const { slug } = await params
@@ -80,30 +61,13 @@ export default async function CategoryPage({ params }: PageProps) {
   const products = await getProductsByCategory(slug)
 
   const categoryNames: Record<string, string> = {
-    laptops: 'Laptops',
-    smartphones: 'Smartphones',
-    gaming: 'Gaming',
-    computer: 'Computer',
-    elektronik: 'Elektronik',
-    'kamera-foto': 'Kamera & Foto',
-    'smart-home': 'Smart Home',
-    'tv-heimkino': 'TV & Heimkino',
-    musik: 'Musik',
-    kueche: 'Küche',
-    haushalt: 'Haushalt',
-    garten: 'Garten',
-    baumarkt: 'Baumarkt',
-    sport: 'Sport',
-    spielzeug: 'Spielzeug',
-    beauty: 'Beauty',
-    baby: 'Baby',
-    haustier: 'Haustier',
-    buecher: 'Bücher',
-    kleidung: 'Kleidung',
-    schuhe: 'Schuhe',
-    lebensmittel: 'Lebensmittel',
-    auto: 'Auto',
-    zubehoer: 'Zubehör',
+    laptops: 'Laptops', smartphones: 'Smartphones', gaming: 'Gaming',
+    computer: 'Computer', elektronik: 'Elektronik', 'kamera-foto': 'Kamera & Foto',
+    'smart-home': 'Smart Home', 'tv-heimkino': 'TV & Heimkino', musik: 'Musik',
+    kueche: 'Küche', haushalt: 'Haushalt', garten: 'Garten', baumarkt: 'Baumarkt',
+    sport: 'Sport', spielzeug: 'Spielzeug', beauty: 'Beauty', baby: 'Baby',
+    haustier: 'Haustier', buecher: 'Bücher', kleidung: 'Kleidung', schuhe: 'Schuhe',
+    lebensmittel: 'Lebensmittel', auto: 'Auto', zubehoer: 'Zubehör',
   }
 
   return (
@@ -111,7 +75,6 @@ export default async function CategoryPage({ params }: PageProps) {
       <div className="mb-8">
         <CategoryFilter activeCategory={slug} />
       </div>
-
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-primary">
           {categoryNames[slug] || slug}
@@ -120,7 +83,6 @@ export default async function CategoryPage({ params }: PageProps) {
           <p className="text-gray-600 mt-2">{category.description}</p>
         )}
       </div>
-
       {products.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.map((product, index) => (
@@ -129,9 +91,7 @@ export default async function CategoryPage({ params }: PageProps) {
         </div>
       ) : (
         <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">
-            Keine Produkte in dieser Kategorie gefunden.
-          </p>
+          <p className="text-gray-500 text-lg">Keine Produkte in dieser Kategorie gefunden.</p>
         </div>
       )}
     </div>

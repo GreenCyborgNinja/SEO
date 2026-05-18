@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import {
   supabase,
   isConfigured,
-  isRapidAPIConfigured,
+  MOCK_PRODUCTS,
   getProductDetails,
   type Product,
 } from '@/lib/supabase'
@@ -23,18 +23,15 @@ async function getProduct(id: string): Promise<Product | null> {
       .single()
     if (data) return data as Product
   }
-  if (isRapidAPIConfigured) {
-    const product = await getProductDetails(id)
-    if (product) return product
-  }
-  return null
+  const mock = MOCK_PRODUCTS.find(p => p.id === id)
+  if (mock) return mock
+  return getProductDetails(id)
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const product = await getProduct(id)
   if (!product) return { title: 'Produkt nicht gefunden' }
-
   return {
     title: product.name,
     description: product.seo_description || product.description || `Kaufe ${product.name} zum besten Preis bei Daily Trends.`,
@@ -61,16 +58,12 @@ function generateJsonLd(product: Product) {
       url: product.affiliate_url,
     },
     aggregateRating: product.rating
-      ? {
-          '@type': 'AggregateRating',
-          ratingValue: product.rating,
-          reviewCount: product.review_count,
-        }
+      ? { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.review_count }
       : undefined,
   }
 }
 
-export const revalidate = 3600
+export const revalidate = 86400
 
 export default async function ProductPage({ params }: PageProps) {
   const { id } = await params
@@ -115,9 +108,7 @@ export default async function ProductPage({ params }: PageProps) {
 
           <div>
             {product.category && (
-              <span className="text-sm text-gray-500 uppercase tracking-wide">
-                {product.category}
-              </span>
+              <span className="text-sm text-gray-500 uppercase tracking-wide">{product.category}</span>
             )}
             {product.brand && (
               <span className="text-sm text-gray-400 ml-2">• {product.brand}</span>
@@ -129,12 +120,7 @@ export default async function ProductPage({ params }: PageProps) {
               <div className="flex items-center gap-3 mt-4">
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <svg
-                      key={star}
-                      className={`w-5 h-5 ${star <= Math.round(product.rating!) ? 'text-yellow-400' : 'text-gray-300'}`}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
+                    <svg key={star} className={`w-5 h-5 ${star <= Math.round(product.rating!) ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
@@ -143,23 +129,17 @@ export default async function ProductPage({ params }: PageProps) {
               </div>
             )}
 
-            <div className="mt-6 flex items-baseline gap-4">
-              <span className="price-tag text-4xl font-bold text-accent">
-                {formatPrice(product.price)}
-              </span>
-              <small className="block text-xs text-gray-400 mt-1">
-                Preise und Verfügbarkeit sind zum angegebenen Zeitpunkt genau und können sich ändern.
-              </small>
+            <div className="mt-6 flex items-baseline gap-4 flex-wrap">
+              <span className="price-tag text-4xl font-bold text-accent">{formatPrice(product.price)}</span>
               {product.original_price && (
                 <>
-                  <span className="price-tag text-xl text-gray-400 line-through">
-                    {formatPrice(product.original_price)}
-                  </span>
-                  <span className="text-success font-medium">
-                    Du sparst {formatPrice(product.original_price - product.price)}
-                  </span>
+                  <span className="price-tag text-xl text-gray-400 line-through">{formatPrice(product.original_price)}</span>
+                  <span className="text-success font-medium">Du sparst {formatPrice(product.original_price - product.price)}</span>
                 </>
               )}
+              <small className="block w-full text-xs text-gray-400 mt-1">
+                Preise und Verfügbarkeit sind zum angegebenen Zeitpunkt genau und können sich ändern.
+              </small>
             </div>
 
             <a

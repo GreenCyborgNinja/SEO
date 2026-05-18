@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import {
-  isRapidAPIConfigured,
+  MOCK_PRODUCTS,
   getDeals,
-  searchProducts,
   type Product,
 } from '@/lib/supabase'
 import ProductCard from '@/components/ProductCard'
@@ -13,8 +12,6 @@ export const metadata: Metadata = {
 }
 
 async function getDealProducts(): Promise<Product[]> {
-  if (!isRapidAPIConfigured) return []
-
   const deals = await getDeals('DE', 'ALL', 'ALL', 'ALL')
   if (deals.length > 0) {
     return deals.map((d) => ({
@@ -35,36 +32,11 @@ async function getDealProducts(): Promise<Product[]> {
       updated_at: new Date().toISOString(),
     }))
   }
-
-  const searches = ['Angebot Laptop', 'Angebot Smartphone', 'Angebot Gaming', 'Angebot Kopfhörer']
-  const seen = new Set<string>()
-  const products: Product[] = []
-
-  for (const query of searches) {
-    try {
-      const result = await searchProducts({
-        query,
-        country: 'DE',
-        page: 1,
-        sort_by: 'RELEVANCE',
-        deals_and_discounts: 'ALL',
-      })
-      for (const p of result.products) {
-        if (!seen.has(p.id) && p.original_price && p.original_price > p.price) {
-          seen.add(p.id)
-          products.push(p)
-        }
-      }
-    } catch {
-      continue
-    }
-    if (products.length >= 30) break
-  }
-
-  return products.slice(0, 30)
+  const discounted = MOCK_PRODUCTS.filter(p => p.original_price != null)
+  return discounted.length > 0 ? discounted : MOCK_PRODUCTS
 }
 
-export const revalidate = 3600
+export const revalidate = 86400
 
 export default async function DealsPage() {
   const products = await getDealProducts()
@@ -86,11 +58,7 @@ export default async function DealsPage() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">
-            {isRapidAPIConfigured
-              ? 'Derzeit keine Deals verfügbar. Bitte versuche es später erneut.'
-              : 'Bitte konfiguriere RAPIDAPI_KEY in den Umgebungsvariablen, um Deals zu sehen.'}
-          </p>
+          <p className="text-gray-500 text-lg">Derzeit keine Deals verfügbar.</p>
         </div>
       )}
     </div>

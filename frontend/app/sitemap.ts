@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { supabase, isConfigured, isRapidAPIConfigured, searchProducts } from '@/lib/supabase'
+import { supabase, isConfigured, MOCK_PRODUCTS, searchProducts } from '@/lib/supabase'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://daily-trends.de'
@@ -9,19 +9,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (isConfigured) {
     const { data } = await supabase.from('products').select('id, updated_at')
     productIds = (data || []).map((p: any) => ({ id: p.id, updated_at: p.updated_at }))
-  } else if (isRapidAPIConfigured) {
-    const queries = ['Laptop', 'Smartphone', 'Gaming', 'Kopfhörer', 'Tablet']
-    for (const q of queries) {
-      try {
-        const result = await searchProducts({ query: q, country: 'DE', page: 1 })
-        for (const p of result.products) {
-          if (!productIds.find((x) => x.id === p.id)) {
-            productIds.push({ id: p.id, updated_at: new Date().toISOString() })
-          }
-        }
-      } catch {
-        // continue with what we have
-      }
+  }
+
+  if (productIds.length === 0) {
+    productIds = MOCK_PRODUCTS.map((p) => ({ id: p.id, updated_at: p.updated_at }))
+  }
+
+  if (productIds.length === 0) {
+    try {
+      const result = await searchProducts({ query: 'tech', country: 'DE', page: 1 })
+      productIds = result.products.map((p) => ({ id: p.id, updated_at: new Date().toISOString() }))
+    } catch {
+      // empty sitemap is acceptable
     }
   }
 
@@ -46,12 +45,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
-    },
+    { url: baseUrl, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
+    { url: `${baseUrl}/deals`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
     ...categoryUrls,
     ...productUrls,
   ]

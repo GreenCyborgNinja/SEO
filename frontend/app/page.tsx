@@ -1,7 +1,7 @@
 import {
   supabase,
   isConfigured,
-  isRapidAPIConfigured,
+  MOCK_PRODUCTS,
   searchProducts,
   fetchDeals,
   type Product,
@@ -18,16 +18,14 @@ async function getProducts(): Promise<Product[]> {
       .limit(20)
     if (data && data.length > 0) return data as Product[]
   }
-  if (isRapidAPIConfigured) {
-    const result = await searchProducts({ query: 'tech', country: 'DE', page: 1 })
-    if (result.products.length > 0) return result.products.slice(0, 20)
-    const deals = await fetchDeals()
-    if (deals.length > 0) return deals
-  }
-  return []
+  const deals = await fetchDeals()
+  if (deals.length > 0) return deals
+  const result = await searchProducts({ query: 'tech', country: 'DE', page: 1 })
+  if (result.products.length > 0) return result.products.slice(0, 20)
+  return MOCK_PRODUCTS
 }
 
-export const revalidate = 3600
+export const revalidate = 86400
 
 export default async function HomePage() {
   const products = await getProducts()
@@ -70,9 +68,7 @@ export default async function HomePage() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">
-            Keine Produkte verfügbar. Bitte konfiguriere RAPIDAPI_KEY in den Umgebungsvariablen.
-          </p>
+          <p className="text-gray-500 text-lg">Keine Produkte verfügbar.</p>
         </div>
       )}
     </div>

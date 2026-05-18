@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase, isConfigured, isRapidAPIConfigured, searchProducts } from '@/lib/supabase'
+import { supabase, isConfigured, MOCK_PRODUCTS, searchProducts } from '@/lib/supabase'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -18,19 +18,17 @@ export async function GET(request: Request) {
     }
 
     const { data, error } = await query
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ products: data })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (data && data.length > 0) return NextResponse.json({ products: data })
   }
 
-  if (isRapidAPIConfigured) {
-    const query = category || 'tech'
-    const result = await searchProducts({ query, country: 'DE', page: 1, sort_by: 'RELEVANCE' })
-    return NextResponse.json({ products: result.products.slice(0, limit) })
+  if (category) {
+    const filtered = MOCK_PRODUCTS.filter(p => p.category === category).slice(0, limit)
+    if (filtered.length > 0) return NextResponse.json({ products: filtered })
   }
 
-  return NextResponse.json({ products: [] })
+  const result = await searchProducts({ query: category || 'tech', country: 'DE', page: 1 })
+  if (result.products.length > 0) return NextResponse.json({ products: result.products.slice(0, limit) })
+
+  return NextResponse.json({ products: MOCK_PRODUCTS.slice(0, limit) })
 }

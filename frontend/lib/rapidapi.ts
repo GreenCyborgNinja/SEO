@@ -18,7 +18,7 @@ async function fetchRapidAPI<T>(endpoint: string, params: Record<string, string>
   const url = new URL(`https://${RAPIDAPI_HOST}${endpoint}`)
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value))
 
-  const response = await fetch(url.toString(), { headers: getHeaders(), next: { revalidate: 3600 } })
+  const response = await fetch(url.toString(), { headers: getHeaders(), next: { revalidate: 86400 } })
 
   if (!response.ok) {
     throw new Error(`RapidAPI error: ${response.status} ${response.statusText}`)

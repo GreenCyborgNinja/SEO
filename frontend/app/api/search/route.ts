@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase, isConfigured, isRapidAPIConfigured, searchProducts } from '@/lib/supabase'
+import { supabase, isConfigured, MOCK_PRODUCTS, searchProducts } from '@/lib/supabase'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -16,24 +16,25 @@ export async function GET(request: Request) {
       .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
       .limit(10)
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ products: data })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (data && data.length > 0) return NextResponse.json({ products: data })
   }
 
-  if (isRapidAPIConfigured) {
-    const result = await searchProducts({ query, country: 'DE', page: 1, sort_by: 'RELEVANCE' })
+  const mockFiltered = MOCK_PRODUCTS.filter(p =>
+    p.name.toLowerCase().includes(query.toLowerCase()) ||
+    p.description?.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 10)
+
+  if (mockFiltered.length > 0) {
     return NextResponse.json({
-      products: result.products.slice(0, 10).map((p) => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        category: p.category,
-      })),
+      products: mockFiltered.map(p => ({ id: p.id, name: p.name, price: p.price, category: p.category })),
     })
   }
 
-  return NextResponse.json({ products: [] })
+  const result = await searchProducts({ query, country: 'DE', page: 1 })
+  return NextResponse.json({
+    products: result.products.slice(0, 10).map((p) => ({
+      id: p.id, name: p.name, price: p.price, category: p.category,
+    })),
+  })
 }
