@@ -1,6 +1,6 @@
 import { fetchAllAvailableProducts, type Product } from '@/lib/supabase'
-import ProductCard from '@/components/ProductCard'
 import CategoryFilter from '@/components/CategoryFilter'
+import SortableProductGrid from '@/components/SortableProductGrid'
 
 export const dynamic = 'force-static'
 
@@ -33,25 +33,11 @@ export default async function HomePage() {
       <hr className="border-gray-200 mb-10" />
 
       <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-primary">Alle Produkte</h2>
-          <span className="text-sm text-gray-500">{products.length} Produkte</span>
-        </div>
-
+        <h2 className="text-2xl font-bold text-primary mb-6">Alle Produkte</h2>
         <CategoryFilter />
       </section>
 
-      {products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">Keine Produkte verfügbar.</p>
-        </div>
-      )}
+      <SortableProductGrid products={products} />
     </div>
   )
 }

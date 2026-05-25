@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { fetchDeals, type Product } from '@/lib/supabase'
-import ProductCard from '@/components/ProductCard'
+import SortableProductGrid from '@/components/SortableProductGrid'
 
 export const metadata: Metadata = {
   title: 'Aktuelle Deals & Angebote',
@@ -25,17 +25,7 @@ export default async function DealsPage() {
         </p>
       </div>
 
-      {products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">Derzeit keine Deals verfügbar.</p>
-        </div>
-      )}
+      <SortableProductGrid products={products} />
     </div>
   )
 }

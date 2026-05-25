@@ -5,8 +5,8 @@ import {
   type Product,
   type Category,
 } from '@/lib/supabase'
-import ProductCard from '@/components/ProductCard'
 import CategoryFilter from '@/components/CategoryFilter'
+import SortableProductGrid from '@/components/SortableProductGrid'
 
 interface PageProps {
   params: { slug: string }
@@ -59,17 +59,7 @@ export default async function CategoryPage({ params }: PageProps) {
           <p className="text-gray-600 mt-2">{category.description}</p>
         )}
       </div>
-      {products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">Keine Produkte in dieser Kategorie gefunden.</p>
-        </div>
-      )}
+      <SortableProductGrid products={products} />
     </div>
   )
 }
