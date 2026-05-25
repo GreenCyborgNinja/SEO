@@ -17,7 +17,7 @@ export default async function DealsPage() {
   const products = await getDealProducts()
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div>
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-bold text-primary mb-3">Aktuelle Deals & Angebote</h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">

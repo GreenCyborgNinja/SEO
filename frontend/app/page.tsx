@@ -12,7 +12,7 @@ export default async function HomePage() {
   const products = await getProducts()
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div>
       <section className="mb-12 text-center max-w-4xl mx-auto">
         <h1 className="text-4xl md:text-5xl font-bold text-primary mb-6">
           Daily Trends

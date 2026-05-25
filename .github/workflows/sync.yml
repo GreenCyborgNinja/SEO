@@ -22,6 +22,7 @@ jobs:
         run: |
           cd backend
           pip install -r requirements.txt
+          pip install -r ad_generator/requirements.txt
 
       - name: Run product sync via RapidAPI
         env:
@@ -32,11 +33,8 @@ jobs:
           RAPIDAPI_COUNTRY: ${{ vars.RAPIDAPI_COUNTRY }}
         run: cd backend/scraper && python main.py
 
-      - name: Generate ad creatives
-        run: |
-          cd backend/ad_generator
-          npm install
-          node generate.js
+      - name: Generate ad creatives (Pillow)
+        run: cd backend/ad_generator && python generate_images.py
 
       - name: Upload ad creatives
         uses: actions/upload-artifact@v4

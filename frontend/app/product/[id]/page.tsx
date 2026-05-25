@@ -73,7 +73,7 @@ export default async function ProductPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(generateJsonLd(product)) }}
       />
-      <div className="container mx-auto px-4 py-8">
+      <div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="relative aspect-square bg-white rounded-xl overflow-hidden shadow-lg">
             {product.image_url ? (

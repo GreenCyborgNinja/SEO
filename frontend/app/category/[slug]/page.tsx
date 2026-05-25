@@ -49,7 +49,7 @@ export default async function CategoryPage({ params }: PageProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div>
       <div className="mb-8">
         <CategoryFilter activeCategory={slug} />
       </div>
