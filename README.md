@@ -1,49 +1,143 @@
-# Daily Trends - Automated Affiliate Shop
+# Daily Trends — Automated Affiliate Shop
 
-SEO-optimized affiliate product shop with automated product syncing and AI-generated content.
+SEO-optimized affiliate product shop with automated product syncing, AI-generated content, and dynamic advertisement banners.
 
-## Tech Stack (Zero Cost)
+> Built entirely on free tiers (Next.js, Supabase, GitHub Actions, Pillow).
+
+---
+
+## Features
+
+- **Automated product scraping** — Fetches Amazon products via RapidAPI every 12 hours
+- **Static site generation** — ISR with daily revalidation for optimal SEO
+- **Category system** — Products auto-categorized by keyword matching
+- **Search functionality** — Client-side product search
+- **Sorting** — Sort by price, savings, rating
+- **Sidebar ads** — Curated product banners on left/right/bottom
+- **Ad image generation** — Python Pillow generates social media ad creatives (5 sizes)
+- **JSON-LD structured data** — Rich snippets for search engines
+- **Dynamic sitemap** — Auto-generated `sitemap.xml`
+- **German language** — Full German UI and content
+
+---
+
+## Tech Stack
 
 | Component | Technology | Cost |
 |-----------|------------|------|
-| Frontend | Next.js 14 | Free |
+| Frontend | Next.js 16 | Free |
 | Hosting | Vercel / Cloudflare Pages | Free Tier |
 | Database | PostgreSQL (Supabase) | Free Tier |
-| Scraping | Python | Free |
-| Automation | GitHub Actions | Free |
-| AI Content | Groq (Llama 3) | Free Tier |
+| Product API | RapidAPI (Real-Time Amazon Data) | Free Tier (100 req/day) |
+| Scraping / Ad Gen | Python 3.12 + Pillow | Free |
+| Automation | GitHub Actions | Free (2000 min/month) |
+| Ad Images | Pillow (no browser needed) | Free |
 
-## Quick Start
+---
+
+## Architecture / Data Flow
+
+```
+RapidAPI (Amazon)
+    ↓  (every 12 hours via GitHub Actions)
+Python Scraper (backend/scraper/)
+    ↓
+Supabase DB  ─or─  local JSON (latest-products.json)
+    ↓  (prebuild step)
+generate-mock-products.mjs
+    ↓
+mock-products.json  →  Next.js (SSG)
+    ↓
+Website with sidebar ads (CSS-rendered)
+```
+
+---
+
+## Prerequisites
+
+- **Node.js** 18+ and **npm**
+- **Python** 3.11+ (for scraper + ad generator — only needed for local runs or GitHub Actions)
+- A **GitHub account** (for Actions + free hosting)
+- **RapidAPI key** for [Real-Time Amazon Data API](https://rapidapi.com/letscrape-6bRBa3QguO5/api/real-time-amazon-data)
+- *(Optional)* **Supabase** account for database storage
+
+
+---
+
+## Getting Started
+
+### 1. Frontend
 
 ```bash
-# Frontend
 cd frontend
 npm install
 npm run dev
+```
 
-# Backend (Python scraper)
+The site runs at `http://localhost:3000`. It works immediately with mock data — no external services required.
+
+### 2. Backend (Scraper — optional for local testing)
+
+```bash
 cd backend
 pip install -r requirements.txt
+pip install -r ad_generator/requirements.txt
 ```
 
-## Environment Setup
+Run the scraper locally:
 
-Create `.env.local` in `/frontend`:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```bash
+cd backend/scraper
+python main.py
 ```
 
-Create `.env` in `/backend`:
-```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_KEY=your_service_key
-GROQ_API_KEY=your_groq_key
+Generate ad images locally:
+
+```bash
+cd backend/ad_generator
+python generate_images.py
 ```
 
-## Database Setup
+---
 
-Run this SQL in Supabase SQL Editor:
+## Environment Variables
+
+### Frontend (`frontend/.env.local`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SITE_URL` | No | Your production URL (e.g. `https://it-trends.de`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | No | Supabase project URL (for live DB) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | No | Supabase anon key (for live DB) |
+| `NEXT_PUBLIC_RAPIDAPI_KEY` | No | RapidAPI key (for live API calls from frontend) |
+| `RAPIDAPI_KEY` | No | RapidAPI key (alternative env name) |
+
+The frontend works **without any env vars** — it uses bundled mock data by default.
+
+### Backend (`backend/.env`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `RAPIDAPI_KEY` | **Yes** | Your RapidAPI key for Amazon Data API |
+| `RAPIDAPI_COUNTRY` | No | Amazon marketplace (`DE` by default) |
+| `SUPABASE_URL` | No | Supabase project URL (falls back to local JSON) |
+| `SUPABASE_SERVICE_KEY` | No | Supabase service role key |
+
+
+### GitHub Secrets (for Actions)
+
+Set these in `Settings → Secrets and variables → Actions`:
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `RAPIDAPI_KEY` | **Yes** | RapidAPI key |
+| `SUPABASE_URL` | No | For Supabase storage (falls back to local JSON) |
+| `SUPABASE_SERVICE_KEY` | No | Supabase service role key |
+| `RAPIDAPI_COUNTRY` | No | Set as **Variable** (not secret), value: `DE` |
+
+---
+
+## Database Schema (Supabase)
 
 ```sql
 CREATE TABLE products (
@@ -73,42 +167,149 @@ CREATE TABLE categories (
 );
 ```
 
-## Deployment
+---
 
-### Vercel (Recommended)
-1. Push to GitHub
-2. Import project in [vercel.com](https://vercel.com)
-3. Add environment variables
-4. Deploy
+## GitHub Actions Workflows
 
-### Cloudflare Pages
-1. Connect GitHub repository
-2. Build command: `npm run build`
-3. Output directory: `.next`
+### `scrape.yml` — Product Scraper
+- Runs every 12 hours (manually triggerable)
+- Fetches products from RapidAPI (searches + best sellers + deals)
+- Stores in Supabase or local JSON
+- Requires: `RAPIDAPI_KEY`
+
+### `sync.yml` — Full Sync Pipeline
+- Runs every 12 hours
+- Scrapes products → Generates ad images → Uploads as artifacts
+- Requires: `RAPIDAPI_KEY`
+- Uses **Pillow**  for fast, dependency-free ad generation
+
+---
+
+## Curated Ad Pool
+
+15 hand-picked products used for sidebar banners and ad image generation. Products were selected for attractive discounts, high ratings, and popular brands.
+
+Defined in:
+- `backend/ad_generator/curated-ads.json` — for image generation
+- `frontend/lib/ads.ts` — for website rendering
+
+**Ad sizes generated:**
+| Format | Size | Usage |
+|--------|------|-------|
+| Skyscraper Left | 200×700 | Website left sidebar |
+| Wide Skyscraper | 350×700 | Website right sidebar |
+| Leaderboard | 728×100 | Website bottom banner |
+| Medium Rectangle | 350×280 | In-content ads |
+| Square | 1080×1080 | Social media / Meta Ads |
+
+---
 
 ## Project Structure
 
 ```
 SEO/
-├── frontend/           # Next.js app
-│   ├── app/           # Pages
-│   ├── components/    # React components
-│   └── lib/           # Utilities
-├── backend/           # Python scripts
-│   ├── scraper/      # Product sync
-│   └── ad_generator/ # Ad creatives
-└── .github/workflows/ # CI/CD
+├── .github/workflows/
+│   ├── scrape.yml               # Scraper workflow
+│   └── sync.yml                 # Full sync + ad generation
+│
+├── backend/
+│   ├── .env                     # Backend environment variables
+│   ├── requirements.txt         # Python dependencies (scraper)
+│   ├── scraper/
+│   │   ├── main.py              # Entry point
+│   │   ├── fetcher.py           # Product fetch orchestration
+│   │   ├── rapidapi_client.py   # RapidAPI HTTP client
+│   │   ├── database.py          # Supabase + local JSON storage
+│   │   ├── seo_generator.py     # Groq AI SEO content
+│   │   └── latest-products.json # Latest scraped output
+│   └── ad_generator/
+│       ├── requirements.txt     # Pillow dependency
+│       ├── curated-ads.json     # Hand-picked product pool
+│       ├── generate_images.py   # Pillow-based ad image generator
+│       └── output/              # Generated ad images
+│
+├── frontend/
+│   ├── .env.local               # Frontend environment variables
+│   ├── package.json             # Next.js 16 + React 18
+│   ├── next.config.js
+│   ├── tailwind.config.js
+│   ├── app/
+│   │   ├── layout.tsx           # Root layout (header, footer, ads)
+│   │   ├── page.tsx             # Home page (all products)
+│   │   ├── globals.css          # Global styles + Tailwind
+│   │   ├── sitemap.ts           # Dynamic XML sitemap
+│   │   ├── deals/page.tsx       # Deals page
+│   │   ├── category/[slug]/page.tsx
+│   │   ├── product/[id]/page.tsx
+│   │   ├── about/page.tsx
+│   │   ├── contact/page.tsx
+│   │   ├── impressum/page.tsx
+│   │   ├── privacy/page.tsx
+│   │   └── api/
+│   │       ├── products/route.ts
+│   │       └── search/route.ts
+│   ├── components/
+│   │   ├── Header.tsx           # Navigation + search
+│   │   ├── Footer.tsx
+│   │   ├── ProductCard.tsx      # Product grid card
+│   │   ├── CategoryFilter.tsx   # Category buttons
+│   │   ├── SearchBar.tsx        # Client-side search
+│   │   ├── AdBanner.tsx         # Reusable ad banner
+│   │   ├── SidebarAds.tsx       # Left/right/bottom ad containers
+│   │   └── SortableProductGrid.tsx  # Sortable product grid
+│   └── lib/
+│       ├── supabase.ts          # Mock data layer (reads mock-products.json)
+│       ├── ads.ts               # Curated ad product pool
+│       ├── utils.ts             # formatPrice, calculateSavings, etc.
+│       └── mock-products.json   # Auto-generated from scraper output
+│
+├── README.md
+└── SPEC.md
 ```
 
-## Features
+---
 
-- Server-side rendering for SEO
-- Incremental Static Regeneration (ISR)
-- JSON-LD structured data
-- Sitemap generation
-- Category filtering
-- Search functionality
-- Mobile responsive
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push to GitHub
+2. Import at [vercel.com](https://vercel.com)
+3. Set **Root Directory** to `frontend`
+4. Build command: `npm run build`
+5. Output: `.next`
+6. Add environment variables (optional — mock data works without them)
+7. Deploy
+
+The prebuild script (`node scripts/generate-mock-products.mjs`) runs automatically during build and transforms the latest scraper output into the frontend mock data file. If no scraper output exists, it falls back to hardcoded sample products.
+
+### WIP: Without Scraper (Standalone Frontend)
+
+The frontend includes ~233 pre-scraped products as mock data. To refresh:
+
+1. Run the scraper locally or in GitHub Actions
+2. Commit the updated `latest-products.json`
+3. Rebuild — the prebuild script picks it up automatically
+
+---
+
+## Local Development Tips
+
+| Command | Description |
+|---------|-------------|
+| `cd frontend && npm run dev` | Start dev server with hot reload |
+| `cd frontend && npm run build` | Production build |
+| `cd backend && python scraper/main.py` | Run scraper locally |
+| `cd backend && python ad_generator/generate_images.py` | Generate ad images |
+| `cd frontend && node scripts/generate-mock-products.mjs` | Rebuild mock data from scraper output |
+
+---
+
+## Specifications
+
+Detailed UI/UX specifications, database schema, and acceptance criteria are documented in [`SPEC.md`](./SPEC.md).
+
+---
 
 ## License
 
