@@ -2,7 +2,7 @@
 
 SEO-optimized affiliate product shop with automated product syncing and dynamic advertisement banners.
 
-> Built entirely on free tiers (Next.js, Supabase, GitHub Actions, Pillow).
+> Built entirely on free tiers (Next.js, GitHub Actions, Pillow).
 
 ---
 
@@ -27,7 +27,6 @@ SEO-optimized affiliate product shop with automated product syncing and dynamic 
 |-----------|------------|------|
 | Frontend | Next.js 16 | Free |
 | Hosting | Vercel / Cloudflare Pages | Free Tier |
-| Database | PostgreSQL (Supabase) | Free Tier |
 | Product API | RapidAPI (Real-Time Amazon Data) | Free Tier (100 req/day) |
 | Scraping / Ad Gen | Python 3.12 + Pillow | Free |
 | Automation | GitHub Actions | Free (2000 min/month) |
@@ -42,7 +41,7 @@ RapidAPI (Amazon)
     ↓  (every 12 hours via GitHub Actions)
 Python Scraper (backend/scraper/)
     ↓  (fetches products + descriptions + images directly)
-Supabase DB  ─or─  local JSON (latest-products.json)
+local JSON (latest-products.json)
     ↓  (prebuild step)
 generate-mock-products.mjs
     ↓
@@ -59,7 +58,7 @@ Website with sidebar ads (CSS-rendered)
 - **Python** 3.11+ (for scraper + ad generator — only needed for local runs or GitHub Actions)
 - A **GitHub account** (for Actions + free hosting)
 - **RapidAPI key** for [Real-Time Amazon Data API](https://rapidapi.com/letscrape-6bRBa3QguO5/api/real-time-amazon-data)
-- *(Optional)* **Supabase** account for database storage
+
 
 
 ---
@@ -107,8 +106,6 @@ python generate_images.py
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SITE_URL` | No | Your production URL (e.g. `https://it-trends.de`) |
-| `NEXT_PUBLIC_SUPABASE_URL` | No | Supabase project URL (for live DB) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | No | Supabase anon key (for live DB) |
 | `NEXT_PUBLIC_RAPIDAPI_KEY` | No | RapidAPI key (for live API calls from frontend) |
 | `RAPIDAPI_KEY` | No | RapidAPI key (alternative env name) |
 
@@ -120,9 +117,6 @@ The frontend works **without any env vars** — it uses bundled mock data by def
 |----------|----------|-------------|
 | `RAPIDAPI_KEY` | **Yes** | Your RapidAPI key for Amazon Data API |
 | `RAPIDAPI_COUNTRY` | No | Amazon marketplace (`DE` by default) |
-| `SUPABASE_URL` | No | Supabase project URL (falls back to local JSON) |
-| `SUPABASE_SERVICE_KEY` | No | Supabase service role key |
-
 
 ### GitHub Secrets (for Actions)
 
@@ -131,41 +125,15 @@ Set these in `Settings → Secrets and variables → Actions`:
 | Secret | Required | Description |
 |--------|----------|-------------|
 | `RAPIDAPI_KEY` | **Yes** | RapidAPI key |
-| `SUPABASE_URL` | No | For Supabase storage (falls back to local JSON) |
-| `SUPABASE_SERVICE_KEY` | No | Supabase service role key |
 | `RAPIDAPI_COUNTRY` | No | Set as **Variable** (not secret), value: `DE` |
 
 ---
 
-## Database Schema (Supabase)
+## Product Data
 
-```sql
-CREATE TABLE products (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  external_id VARCHAR(255) UNIQUE,
-  name VARCHAR(500) NOT NULL,
-  description TEXT,
-  seo_description TEXT,
-  price DECIMAL(10,2),
-  original_price DECIMAL(10,2),
-  affiliate_url TEXT NOT NULL,
-  image_url TEXT,
-  category VARCHAR(100),
-  brand VARCHAR(100),
-  rating DECIMAL(3,2),
-  review_count INTEGER DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE categories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(100) NOT NULL UNIQUE,
-  slug VARCHAR(100) NOT NULL UNIQUE,
-  description TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
+Products are stored as JSON files in `backend/scraper/`. The scraper outputs:
+- `latest-products.json` — latest snapshot (consumed by the frontend build)
+- `products_YYYYMMDD_HHMMSS.json` — timestamped backups
 
 ---
 
@@ -219,7 +187,7 @@ SEO/
 │   │   ├── main.py              # Entry point
 │   │   ├── fetcher.py           # Product fetch orchestration
 │   │   ├── rapidapi_client.py   # RapidAPI HTTP client
-│   │   ├── database.py          # Supabase + local JSON storage
+│   │   ├── database.py          # JSON file storage
 │   │   └── latest-products.json # Latest scraped output
 │   └── ad_generator/
 │       ├── requirements.txt     # Pillow dependency
@@ -257,7 +225,7 @@ SEO/
 │   │   ├── SidebarAds.tsx       # Left/right/bottom ad containers
 │   │   └── SortableProductGrid.tsx  # Sortable product grid
 │   └── lib/
-│       ├── supabase.ts          # Mock data layer (reads mock-products.json)
+│       ├── supabase.ts          # Product types + mock data layer
 │       ├── ads.ts               # Curated ad product pool
 │       ├── utils.ts             # formatPrice, calculateSavings, etc.
 │       └── mock-products.json   # Auto-generated from scraper output
