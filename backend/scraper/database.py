@@ -63,15 +63,6 @@ async def get_all_products() -> List[Dict[str, Any]]:
             print(f"Supabase query error: {e}")
     return _load_local_json()
 
-async def get_products_without_seo() -> List[Dict[str, Any]]:
-    if supabase:
-        try:
-            response = supabase.table('products').select('*').is_('seo_description', None).execute()
-            return response.data or []
-        except Exception as e:
-            print(f"Supabase query error: {e}")
-    return []
-
 async def delete_product(external_id: str) -> None:
     if supabase:
         try:

@@ -1,6 +1,6 @@
 # Daily Trends — Automated Affiliate Shop
 
-SEO-optimized affiliate product shop with automated product syncing, AI-generated content, and dynamic advertisement banners.
+SEO-optimized affiliate product shop with automated product syncing and dynamic advertisement banners.
 
 > Built entirely on free tiers (Next.js, Supabase, GitHub Actions, Pillow).
 
@@ -41,7 +41,7 @@ SEO-optimized affiliate product shop with automated product syncing, AI-generate
 RapidAPI (Amazon)
     ↓  (every 12 hours via GitHub Actions)
 Python Scraper (backend/scraper/)
-    ↓
+    ↓  (fetches products + descriptions + images directly)
 Supabase DB  ─or─  local JSON (latest-products.json)
     ↓  (prebuild step)
 generate-mock-products.mjs
@@ -181,7 +181,7 @@ CREATE TABLE categories (
 - Runs every 12 hours
 - Scrapes products → Generates ad images → Uploads as artifacts
 - Requires: `RAPIDAPI_KEY`
-- Uses **Pillow**  for fast, dependency-free ad generation
+- Uses **Pillow** for fast, dependency-free ad generation
 
 ---
 
@@ -220,7 +220,6 @@ SEO/
 │   │   ├── fetcher.py           # Product fetch orchestration
 │   │   ├── rapidapi_client.py   # RapidAPI HTTP client
 │   │   ├── database.py          # Supabase + local JSON storage
-│   │   ├── seo_generator.py     # Groq AI SEO content
 │   │   └── latest-products.json # Latest scraped output
 │   └── ad_generator/
 │       ├── requirements.txt     # Pillow dependency
