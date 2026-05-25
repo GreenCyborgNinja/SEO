@@ -7,11 +7,11 @@ interface AdBannerProps {
 }
 
 const variantStyles = {
-  'skyscraper': { width: 'w-[160px]', height: 'min-h-[600px]', textSize: 'text-sm', priceSize: 'text-lg', badgeSize: 'text-xs' },
-  'wide-skyscraper': { width: 'w-[300px]', height: 'min-h-[600px]', textSize: 'text-sm', priceSize: 'text-xl', badgeSize: 'text-xs' },
-  'rectangle': { width: 'w-[300px]', height: 'min-h-[250px]', textSize: 'text-sm', priceSize: 'text-xl', badgeSize: 'text-xs' },
-  'leaderboard': { width: 'w-full max-w-[728px]', height: 'min-h-[90px]', textSize: 'text-xs', priceSize: 'text-base', badgeSize: 'text-[10px]' },
-  'square': { width: 'w-[300px]', height: 'min-h-[300px]', textSize: 'text-sm', priceSize: 'text-2xl', badgeSize: 'text-sm' },
+  'skyscraper': { width: 'w-[200px]', height: 'min-h-[700px]', textSize: 'text-sm', priceSize: 'text-xl', badgeSize: 'text-xs', imgSize: 'h-36', padding: 'p-4' },
+  'wide-skyscraper': { width: 'w-[350px]', height: 'min-h-[700px]', textSize: 'text-base', priceSize: 'text-2xl', badgeSize: 'text-sm', imgSize: 'h-48', padding: 'p-5' },
+  'rectangle': { width: 'w-[350px]', height: 'min-h-[280px]', textSize: 'text-sm', priceSize: 'text-xl', badgeSize: 'text-xs', imgSize: 'h-16', padding: 'p-4' },
+  'leaderboard': { width: 'w-full max-w-[728px]', height: 'min-h-[100px]', textSize: 'text-sm', priceSize: 'text-lg', badgeSize: 'text-xs', imgSize: 'h-16', padding: 'p-3' },
+  'square': { width: 'w-[400px]', height: 'min-h-[400px]', textSize: 'text-base', priceSize: 'text-3xl', badgeSize: 'text-base', imgSize: 'h-56', padding: 'p-6' },
 }
 
 export default function AdBanner({ product, variant = 'wide-skyscraper' }: AdBannerProps) {
@@ -19,7 +19,7 @@ export default function AdBanner({ product, variant = 'wide-skyscraper' }: AdBan
   const savings = product.original_price
     ? calculateSavings(product.original_price, product.price)
     : 0
-  const isHorizontal = variant === 'leaderboard'
+  const isHorizontal = variant === 'leaderboard' || variant === 'rectangle'
 
   return (
     <a
@@ -29,14 +29,14 @@ export default function AdBanner({ product, variant = 'wide-skyscraper' }: AdBan
       className={`block ${style.width} ${style.height} bg-gradient-to-b from-[#0F172A] to-[#1E293B] rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group relative`}
     >
       {savings > 0 && (
-        <span className={`absolute top-2 right-2 bg-accent text-white ${style.badgeSize} font-bold px-2 py-1 rounded-full z-10`}>
+        <span className={`absolute top-3 right-3 bg-accent text-white ${style.badgeSize} font-bold px-3 py-1.5 rounded-full z-10 shadow-lg`}>
           -{savings}%
         </span>
       )}
 
-      <div className={`flex ${isHorizontal ? 'flex-row items-center h-full' : 'flex-col'} p-3 h-full`}>
+      <div className={`flex ${isHorizontal ? 'flex-row items-center h-full' : 'flex-col'} ${style.padding} h-full gap-3`}>
         {product.image_url && (
-          <div className={`${isHorizontal ? 'w-16 h-16 shrink-0' : 'w-full aspect-square mb-2'} relative overflow-hidden rounded-lg bg-gray-800`}>
+          <div className={`${isHorizontal ? 'w-20 h-20 shrink-0' : `w-full ${style.imgSize} shrink-0`} relative overflow-hidden rounded-xl bg-gray-800 ring-1 ring-white/10`}>
             <img
               src={product.image_url}
               alt=""
@@ -46,28 +46,28 @@ export default function AdBanner({ product, variant = 'wide-skyscraper' }: AdBan
           </div>
         )}
 
-        <div className={`flex flex-col ${isHorizontal ? 'ml-3 flex-1 min-w-0' : 'flex-1'}`}>
+        <div className={`flex flex-col ${isHorizontal ? 'flex-1 min-w-0' : 'flex-1'} gap-1.5`}>
           {product.brand && (
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">
+            <span className="text-[11px] text-gray-400 uppercase tracking-widest font-medium">
               {product.brand}
             </span>
           )}
-          <h3 className={`${style.textSize} font-semibold text-white leading-tight line-clamp-2 mb-1`}>
+          <h3 className={`${style.textSize} font-semibold text-white leading-snug line-clamp-2`}>
             {product.name}
           </h3>
 
-          <div className={`flex items-baseline gap-1.5 ${isHorizontal ? 'mt-0' : 'mt-auto'}`}>
+          <div className={`flex items-baseline gap-2 mt-auto pt-1`}>
             <span className={`${style.priceSize} font-bold text-accent`}>
               {formatPrice(product.price)}
             </span>
-            {product.original_price && (
-              <span className="text-[10px] text-gray-500 line-through">
+            {product.original_price && product.original_price > product.price && (
+              <span className="text-xs text-gray-500 line-through">
                 {formatPrice(product.original_price)}
               </span>
             )}
           </div>
 
-          <span className="mt-1 text-center bg-success text-white text-[10px] font-bold py-1 rounded-md group-hover:brightness-110 transition">
+          <span className="block mt-2 text-center bg-success text-white text-xs font-bold py-2.5 rounded-lg group-hover:brightness-110 transition shadow-md">
             Jetzt kaufen →
           </span>
         </div>

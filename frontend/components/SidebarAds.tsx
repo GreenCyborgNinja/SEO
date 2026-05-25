@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getRandomAd, getCuratedProducts } from '@/lib/ads'
+import { getRandomAd } from '@/lib/ads'
 import type { Product } from '@/lib/supabase'
 import AdBanner from './AdBanner'
 
@@ -15,7 +15,7 @@ export function LeftSidebar() {
   if (!ad) return null
 
   return (
-    <aside className="hidden xl:block w-[160px] shrink-0">
+    <aside className="hidden xl:block w-[200px] shrink-0">
       <div className="sticky top-24">
         <AdBanner product={ad} variant="skyscraper" />
       </div>
@@ -33,7 +33,7 @@ export function RightSidebar() {
   if (!ad) return null
 
   return (
-    <aside className="hidden lg:block w-[300px] shrink-0">
+    <aside className="hidden lg:block w-[350px] shrink-0">
       <div className="sticky top-24">
         <AdBanner product={ad} variant="wide-skyscraper" />
       </div>

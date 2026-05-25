@@ -28,7 +28,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1">
-          <div className="flex justify-center gap-0 lg:gap-4 px-4 lg:px-8 py-8 max-w-[1600px] mx-auto">
+          <div className="flex justify-center gap-0 lg:gap-4 px-4 lg:px-8 py-8 max-w-[1800px] mx-auto">
             <LeftSidebar />
             <div className="flex-1 min-w-0">{children}</div>
             <RightSidebar />

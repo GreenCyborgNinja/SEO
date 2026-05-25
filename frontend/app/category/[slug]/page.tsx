@@ -17,9 +17,7 @@ function getCategory(slug: string): Category | null {
 }
 
 async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
-  const mock = MOCK_PRODUCTS.filter(p => p.category === categorySlug)
-  if (mock.length > 0) return mock
-  return MOCK_PRODUCTS
+  return MOCK_PRODUCTS.filter(p => p.category === categorySlug)
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
