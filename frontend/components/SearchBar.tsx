@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 interface SearchResult {
   id: string
   name: string
   price: number
-  category: string
+  category: string | null
 }
 
 export default function SearchBar() {
@@ -15,6 +16,7 @@ export default function SearchBar() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -27,33 +29,51 @@ export default function SearchBar() {
   }, [])
 
   useEffect(() => {
-    const searchProducts = async () => {
+    const controller = new AbortController()
+
+    const run = async () => {
       if (query.length < 2) {
         setResults([])
         return
       }
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        })
         const data = await res.json()
         setResults(data.products || [])
         setIsOpen(true)
       } catch {
-        setResults([])
+        // Aborted or offline — keep the previous list rather than flashing empty.
       }
     }
-    const debounce = setTimeout(searchProducts, 300)
-    return () => clearTimeout(debounce)
+
+    const debounce = setTimeout(run, 300)
+    return () => {
+      clearTimeout(debounce)
+      controller.abort()
+    }
   }, [query])
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault()
+    if (query.trim().length < 2) return
+    setIsOpen(false)
+    router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+  }
 
   return (
     <div ref={wrapperRef} className="relative w-full">
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Produkte suchen..."
-        className="w-full px-4 py-2 rounded-lg bg-secondary border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:border-accent"
-      />
+      <form onSubmit={submit} role="search">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Produkte suchen..."
+          aria-label="Produkte suchen"
+          className="w-full px-4 py-2 rounded-lg bg-secondary border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:border-accent"
+        />
+      </form>
       {isOpen && results.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl overflow-hidden z-50">
           {results.map((product) => (
@@ -63,12 +83,20 @@ export default function SearchBar() {
               className="block px-4 py-3 hover:bg-gray-50 border-b last:border-b-0"
               onClick={() => setIsOpen(false)}
             >
-              <div className="font-medium text-gray-900">{product.name}</div>
+              <div className="font-medium text-gray-900 line-clamp-1">{product.name}</div>
               <div className="text-sm text-gray-500">
-                {product.category} • <span className="price-tag font-medium">€{product.price.toFixed(2)}</span>
+                {product.category} •{' '}
+                <span className="price-tag font-medium">€{product.price.toFixed(2)}</span>
               </div>
             </Link>
           ))}
+          <Link
+            href={`/search?q=${encodeURIComponent(query.trim())}`}
+            className="block px-4 py-3 text-sm font-medium text-accent hover:bg-gray-50"
+            onClick={() => setIsOpen(false)}
+          >
+            Alle Ergebnisse für „{query.trim()}“ anzeigen →
+          </Link>
         </div>
       )}
     </div>

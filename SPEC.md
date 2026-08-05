@@ -1,279 +1,170 @@
-# Daily Trends Affiliate Shop - Specification
+# Daily Trends – Technische Spezifikation
 
-## 1. Project Overview
+Stand: Juli 2026. Beschreibt den umgesetzten Zustand, nicht den ursprünglichen Entwurf.
 
-**Project Name:** Daily Trends - Automated Affiliate Product Shop
-**Project Type:** SEO-optimized affiliate website with automated product syncing
-**Core Functionality:** An automatically generated online shop that displays IT/tech products with affiliate links, regularly syncs products from external sources, and generates AI-optimized SEO content
-**Target Users:** Tech-savvy online shoppers looking for IT products and deals
+## 1. Überblick
 
----
+Automatisierter Affiliate-Shop für Technik-Produkte. Produktdaten werden per Scraper aus der
+RapidAPI „Real-Time Amazon Data" in eine lokale SQLite-Datenbank geschrieben; Next.js rendert daraus
+einen SEO-optimierten Shop mit Nutzerkonten, KI-generierten Produkttexten, Empfehlungen und einem
+eigenen Analytics-Dashboard zur CAC-Berechnung.
+
+Leitprinzip: **Betrieb ohne laufende Kosten und ohne Pflicht-Konfiguration.** Jede Komponente hat
+einen kostenlosen Pfad und einen funktionierenden Fallback ohne API-Key.
 
 ## 2. Tech Stack
 
-| Component | Technology | Cost |
-|-----------|------------|------|
-| Frontend | Next.js 14 (App Router) | Free |
-| Hosting | Vercel | Free Tier |
-| Database | PostgreSQL (Supabase) | Free Tier |
-| Backend/Scraping | Python | Free |
-| Automation | GitHub Actions | Free |
-| AI Content | Groq (Llama 3) | Free Tier |
-| Image Generation | Puppeteer/HTML-to-Image | Free |
+| Bereich | Technologie | Kosten |
+|---|---|---|
+| Frontend | Next.js 16 (App Router, ISR), React 19, Tailwind CSS 3 | kostenlos |
+| Datenbank | SQLite (`better-sqlite3`) + Drizzle ORM | kostenlos, serverlos |
+| Auth | Auth.js v5 (Credentials, JWT-Session), bcryptjs | kostenlos |
+| Scraper | Python 3.12, httpx | kostenlos |
+| Produkt-API | RapidAPI Real-Time Amazon Data | Free Tier: 100 Req./Tag |
+| KI-Texte | Google Gemini `gemini-2.5-flash`, alternativ Ollama, sonst Templates | Free Tier |
+| Empfehlungen | TF-IDF in reinem JavaScript (kein Modell, kein Key) | kostenlos |
+| Analytics | Eigene `events`-Tabelle, Inline-SVG-Charts | kostenlos |
+| Mail | nodemailer (Datei-Transport lokal, optional SMTP) | kostenlos |
+| Werbemittel | Python + Pillow | kostenlos |
+| Automatisierung | GitHub Actions (1×/Tag) | kostenlos |
 
----
+## 3. Datenmodell (SQLite)
 
-## 3. UI/UX Specification
+15 Tabellen, definiert in `frontend/lib/db/schema.ts`, Migrationen in `frontend/drizzle/`.
 
-### Layout Structure
+### Katalog
+- **`categories`** — `slug` (PK), `name`, `description`, `sort_order`. Gespeist aus
+  `shared/taxonomy.json`.
+- **`products`** — `id` (PK, = ASIN), `external_id` (unique), `name`, `description`,
+  `seo_description`, `description_source` (`ai` | `template` | NULL), `price`, `original_price`,
+  `affiliate_url`, `image_url`, `category` (FK), `brand`, `rating`, `review_count`, `created_at`,
+  `updated_at`. Indizes auf `category`, `price`, `original_price`.
+- **`product_similarity`** — `(product_id, related_id)` (PK), `score`, `reason`, `source`
+  (`content` | `llm`). Vorberechnete Empfehlungen.
 
-**Header**
-- Logo: "Daily Trends" with tech-inspired icon
-- Navigation: Categories, Deals, About
-- Search bar with autocomplete
+### Nutzer (Auth.js-Adapter-Schema + eigene Felder)
+- **`users`** — `id` (PK), `name`, `email` (unique), `emailVerified`, `image`, `password_hash`,
+  `role` (`user` | `admin`), `newsletter_opt_in`, `created_at`.
+- **`accounts`**, **`sessions`**, **`verificationToken`** — vom Drizzle-Adapter benötigt.
+- **`favourites`** — `(user_id, product_id)` (PK), `created_at`.
 
-**Hero Section**
-- Featured deal of the day
-- Rotating banner with current promotions
+### Shop-Funktionen
+- **`newsletter_subscribers`** — `id`, `email` (unique), `status` (`pending` | `confirmed` |
+  `unsubscribed`), `token`, `user_id`, `created_at`, `confirmed_at`, `unsubscribed_at`.
+- **`discount_codes`** — `id`, `code` (unique), `title`, `description`, `value_label`, `audience`
+  (`member` | `public`), `valid_until`, `active`.
+- **`discount_redemptions`** — `(user_id, code_id)` (PK), `revealed_at`.
+- **`contact_messages`** — `id`, `name`, `email`, `subject`, `message`, `created_at`.
 
-**Product Grid**
-- 4 columns desktop, 2 tablet, 1 mobile
-- Product cards with hover effects
+### Analytics
+- **`events`** — `id`, `type` (`pageview` | `click` | `search`), `product_id`, `category`, `path`,
+  `src` (Platzierung), `session_id`, `user_id`, `created_at`. Indizes auf `(type, created_at)`,
+  `product_id`, `(session_id, created_at)`.
+- **`ad_spend`** — `id`, `day`, `channel`, `amount_eur`, `note`. Zähler der CAC-Formel.
+- **`sync_runs`** — Protokoll jedes Scraper-Laufs: `products_upserted`, `api_calls`,
+  `rate_limit_remaining`, `status`, `error`.
 
-**Product Card Components**
-- Product image (lazy loaded)
-- Product name
-- Original price (strikethrough)
-- Current/Affiliate price
-- Savings percentage badge
-- "Zum Shop" CTA button
-- Rating stars
+### Nebenläufigkeit
+Beide Prozesse öffnen dieselbe Datei mit `journal_mode=WAL`, `busy_timeout=5000`,
+`foreign_keys=ON`. Python hält Transaktionen kurz (ein `executemany`-Upsert pro Lauf). Der Scraper
+überschreibt `description`, `seo_description` und eine vorhandene `category` **nie** mit leeren
+Werten – KI-Texte überleben jeden Re-Scrape.
 
-**Footer**
-- Affiliate disclosure
-- Navigation links
-- Newsletter signup
+## 4. Routen
 
-### Responsive Breakpoints
-- Mobile: < 640px
-- Tablet: 640px - 1024px
-- Desktop: > 1024px
+| Route | Rendering | Zweck |
+|---|---|---|
+| `/` | ISR (600 s) | Katalog, Kategorie-Filter, personalisierte Rail |
+| `/deals` | ISR (600 s) | Produkte mit Preisnachlass, nach Ersparnis sortiert |
+| `/category/[slug]` | SSG + ISR, `dynamicParams=false` | Kategorieseite; unbekannte Slugs → 404 |
+| `/product/[id]` | SSG + ISR (86400 s), `dynamicParams=false` | Detailseite, JSON-LD, Empfehlungen |
+| `/search` | dynamisch, `noindex` | Volltextsuche |
+| `/login`, `/register` | statisch, `noindex` | Auth-Formulare |
+| `/account` | dynamisch, geschützt | Profil, Merkliste, Newsletter, Rabatte |
+| `/admin`, `/admin/spend` | dynamisch, Rolle `admin` | Analytics + Werbekosten |
+| `/newsletter/confirm`, `/unsubscribe` | dynamisch | Double-Opt-in |
+| `/go/[id]` | dynamisch | Klick zählen → 302 auf getaggte Amazon-URL |
+| `/api/*` | dynamisch | Tracking, Suche, Favoriten, Newsletter, Rabatte, Admin, Auth |
 
-### Visual Design
+**Warum kein `force-static` mehr:** Es friert DB-Lesevorgänge auf die Build-Zeit ein und verbietet
+`cookies()`/`headers()`, die Auth, `/go` und Tracking brauchen. Stattdessen ISR für Inhalte, während
+nutzerspezifische Teile (Session-Menü, Member-Banner, persönliche Empfehlungen) Client-Komponenten
+sind – so bleibt das Layout cachebar.
 
-**Color Palette**
-- Primary: `#0F172A` (Dark navy)
-- Secondary: `#1E293B` (Slate)
-- Accent: `#F97316` (Orange - for CTAs and deals)
-- Success: `#22C55E` (Green - for savings)
-- Background: `#F8FAFC` (Light gray)
-- Text Primary: `#1E293B`
-- Text Secondary: `#64748B`
+## 5. SEO
 
-**Typography**
-- Headings: "Inter", bold
-- Body: "Inter", regular
-- Prices: "JetBrains Mono" (monospace)
+- `metadataBase` + `alternates.canonical` auf allen Inhaltsseiten.
+- JSON-LD: `Product` (mit `offers.url` auf die **getaggte Amazon-URL**, nicht den Redirect) und
+  `BreadcrumbList` auf Detailseiten.
+- `app/sitemap.ts`: statische Seiten, befüllte Kategorien, alle Produkte (`lastModified` aus
+  `updated_at`).
+- `app/robots.ts`: sperrt `/go/`, `/api/`, `/admin`, `/account`, `/login`, `/register`,
+  `/newsletter/`.
+- Unbekannte Produkt-/Kategorie-URLs liefern echtes HTTP 404 (kein Soft-404).
+- Alle Affiliate-Links tragen `rel="nofollow sponsored noopener"`.
+- HTML-Entities werden beim Import dekodiert (`15,6"` statt `15,6&quot;`).
 
-**Spacing System**
-- Base unit: 4px
-- Section padding: 64px vertical
-- Card padding: 16px
-- Grid gap: 24px
+## 6. Affiliate-Kette
 
-**Visual Effects**
-- Card shadow: `0 4px 6px -1px rgba(0,0,0,0.1)`
-- Card hover: translateY(-4px) with shadow increase
-- Button hover: brightness(1.1)
-- Page load: staggered fade-in animation
+1. UI verlinkt auf `/go/<ASIN>?src=<placement>`.
+2. Der Route-Handler lädt das Produkt, schreibt ein `click`-Event (Session, Platzierung, ggf.
+   Nutzer) und antwortet mit 302.
+3. Ziel ist `amazon.de/dp/<ASIN>?tag=<AMAZON_PARTNER_TAG>&linkCode=ogi&ascsubtag=dt-<placement>-<YYYYMMDD>`.
+4. `ascsubtag` erscheint in den PartnerNet-Berichten → Zuordnung von Umsatz zu Platzierung.
 
-### Components
+Platzierungen: `card`, `detail`, `rail`, `search`, `ad-skyscraper`, `ad-wide-skyscraper`,
+`ad-leaderboard`, `ad-rectangle`, `ad-square`.
 
-1. **ProductCard** - Individual product display
-2. **CategoryFilter** - Filter by product categories
-3. **PriceRangeSlider** - Filter by price
-4. **SearchBar** - Product search with suggestions
-5. **DealBadge** - Animated discount badge
-6. **SEOContentBlock** - AI-generated product descriptions
-7. **AffiliateDisclaimer** - Legal disclosure
-
----
-
-## 4. Database Schema (Supabase/PostgreSQL)
-
-```sql
--- Products table
-CREATE TABLE products (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  external_id VARCHAR(255) UNIQUE,
-  name VARCHAR(500) NOT NULL,
-  description TEXT,
-  seo_description TEXT,
-  price DECIMAL(10,2),
-  original_price DECIMAL(10,2),
-  affiliate_url TEXT NOT NULL,
-  image_url TEXT,
-  category VARCHAR(100),
-  brand VARCHAR(100),
-  rating DECIMAL(3,2),
-  review_count INTEGER DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Categories table
-CREATE TABLE categories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(100) NOT NULL UNIQUE,
-  slug VARCHAR(100) NOT NULL UNIQUE,
-  description TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Settings table (for scraping config)
-CREATE TABLE settings (
-  key VARCHAR(100) PRIMARY KEY,
-  value TEXT,
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
-
----
-
-## 5. Functionality Specification
-
-### Core Features
-
-**1. Product Display**
-- Fetch products from Supabase on build/runtime
-- Server-side rendering for SEO
-- Dynamic metadata generation
-- Structured data (JSON-LD) for products
-
-**2. Category System**
-- Dynamic category pages (/category/[slug])
-- Category-specific meta descriptions
-- Filter products by category
-
-**3. Search Functionality**
-- Full-text search on product names/descriptions
-- Debounced search input
-- Search results page with filters
-
-**4. SEO Optimization**
-- Automatic meta tags per page
-- Sitemap.xml generation
-- robots.txt
-- Canonical URLs
-- Open Graph tags
-- JSON-LD structured data
-
-**5. Product Sync Pipeline (Python)**
-- Source: Simulated affiliate API (configurable)
-- Fetch new products
-- Compare with existing (upsert)
-- Generate SEO descriptions via Groq
-- Update database
-
-**6. Ad Creative Generation**
-- HTML template for product ads
-- Puppeteer screenshot capture
-- Output: 1080x1080 images for Meta/Google Ads
-
-### User Interactions
-- Click product → redirect to affiliate URL (tracked)
-- Filter products by category/price
-- Search products
-- Newsletter signup (future)
-
-### Data Handling
-- Static generation for category pages
-- ISR (Incremental Static Regeneration) for product pages
-- API routes for dynamic filtering
-
----
-
-## 6. File Structure
+## 7. CAC-Berechnung
 
 ```
-Daily Trends/
-├── frontend/                 # Next.js app
-│   ├── app/
-│   │   ├── page.tsx          # Home page
-│   │   ├── layout.tsx        # Root layout
-│   │   ├── category/
-│   │   │   └── [slug]/
-│   │   │       └── page.tsx  # Category page
-│   │   ├── product/
-│   │   │   └── [id]/
-│   │   │       └── page.tsx  # Product detail
-│   │   ├── api/
-│   │   │   ├── products/     # Products API
-│   │   │   └── search/       # Search API
-│   │   └── sitemap.ts        # Sitemap
-│   ├── components/
-│   │   ├── ProductCard.tsx
-│   │   ├── Header.tsx
-│   │   ├── Footer.tsx
-│   │   ├── CategoryFilter.tsx
-│   │   └── SearchBar.tsx
-│   ├── lib/
-│   │   ├── supabase.ts       # Supabase client
-│   │   └── utils.ts
-│   ├── package.json
-│   └── tailwind.config.js
-│
-├── backend/                  # Python scraping scripts
-│   ├── scraper/
-│   │   ├── main.py           # Entry point
-│   │   ├── fetcher.py        # Product fetching
-│   │   ├── seo_generator.py  # AI SEO content
-│   │   └── database.py      # DB operations
-│   ├── ad_generator/
-│   │   ├── template.html     # Ad template
-│   │   └── generate.py      # Puppeteer generation
-│   └── requirements.txt
-│
-├── .github/
-│   └── workflows/
-│       └── sync.yml          # GitHub Actions workflow
-│
-└── README.md
+CAC = Σ Werbekosten (ad_spend im Zeitraum) ÷ Neukunden (users.created_at im Zeitraum)
 ```
 
----
+Ohne Neukunden ist der Wert nicht definiert und wird als `n/a` ausgewiesen – nicht als 0 €.
+Zeiträume: 7 / 30 / 90 Tage. Weitere Kennzahlen: Seitenaufrufe, Sitzungen, Affiliate-Klicks, CTR,
+Klicks je Neukunde, Klicks nach Produkt/Kategorie/Platzierung, Werbekosten nach Kanal.
 
-## 7. Acceptance Criteria
+## 8. KI-Pipeline
 
-### Visual Checkpoints
-- [ ] Header displays logo, nav, and search
-- [ ] Product cards show image, name, prices, badge
-- [ ] Category pages filter correctly
-- [ ] Responsive layout works on all breakpoints
-- [ ] Animations are smooth and not jarring
+**Produkttexte** (`npm run ai:descriptions`): Auswahl nur der Produkte ohne Text, 5 ASINs pro
+Request, JSON-Antwortformat, Backoff bei 429/5xx, sofortiges Schreiben pro Batch (resumierbar).
+Validierung von Form und Länge; pro Produkt Fallback auf ein deterministisches deutsches Template.
+Der Prompt verbietet erfundene technische Daten.
 
-### Functional Checkpoints
-- [ ] Products load from Supabase
-- [ ] Category routing works (/category/laptops)
-- [ ] Product detail pages render with SEO meta
-- [ ] Search returns relevant results
-- [ ] Sitemap.xml generates correctly
-- [ ] Python sync script runs without errors
+**Empfehlungen** (`npm run ai:similar`): TF-IDF über deutsch-normalisierte Titel-Tokens
+(Umlaut-Folding, Stopwords, Filter für Modellnummern) + Cosinus-Ähnlichkeit, plus Boni für gleiche
+Kategorie (+0,25), gleiche Marke (+0,1), Preisband ±30 % (bis +0,15) und ähnliche Bewertung (+0,05).
+Top 8 pro Produkt. Optionales `--llm` lässt die Top-Kandidaten neu sortieren und speichert eine
+Begründung. 233 Produkte ≈ 35 ms.
 
-### SEO Checkpoints
-- [ ] Each page has unique meta title/description
-- [ ] JSON-LD structured data present
-- [ ] Open Graph tags on all pages
-- [ ] Semantic HTML structure (header, main, footer)
-- [ ] Images have alt text
+Beide Skripte laufen offline und schreiben in die Datenbank – zur Request-Zeit wird nie ein
+KI-Dienst aufgerufen.
 
----
+## 9. Kategorie-Taxonomie
 
-## 8. Implementation Priority
+`shared/taxonomy.json` ist die einzige Quelle: gelesen von TypeScript
+(`frontend/lib/catalog/normalize.mjs`) **und** Python (`backend/scraper/taxonomy.py`). Enthält pro
+Kategorie Slug, Name, Beschreibung, Keywords, Suchbegriffe (mit Seitenzahl) und die
+Amazon-Bestseller-Kategorie.
 
-1. **Phase 1:** Next.js frontend setup + Supabase connection
-2. **Phase 2:** Product display components + pages
-3. **Phase 3:** Category system + filtering
-4. **Phase 4:** SEO optimization (meta, sitemap, structured data)
-5. **Phase 5:** Python scraping pipeline
-6. **Phase 6:** Ad creative generation script
+**Zuordnung per Scoring:** Ein Keyword-Treffer in den ersten 45 Zeichen des Titels zählt 3, ein
+späterer 1; höchste Summe gewinnt, bei Gleichstand entscheidet die Reihenfolge. Keywords müssen an
+einer Wortgrenze enden (optionale deutsche Pluralendung), dürfen aber Präfixe haben – so trifft
+„Ladekabel" auf `kabel`, „kabellos" hingegen nicht.
+
+Vorher existierte diese Liste sechsfach in unterschiedlichen Varianten; 20 von 25 Kategorie-Links
+führten auf leere Seiten.
+
+## 10. Fallback-Verhalten
+
+| Fehlt | Verhalten |
+|---|---|
+| `RAPIDAPI_KEY` | Scraper beendet sich mit Exit 0, DB unverändert |
+| RapidAPI-Quota erschöpft | Lauf bricht nach dem ersten 429 mit `remaining=0` ab, bereits geholte Produkte werden gespeichert |
+| `GEMINI_API_KEY` | Deterministische Template-Texte |
+| `SMTP_HOST` | `.eml`-Dateien in `data/mail-outbox/`, Links in der Konsole |
+| `AMAZON_PARTNER_TAG` | Links ohne Tag, Klicks werden weiter gezählt |
+| `AUTH_SECRET` | Fester Entwicklungsschlüssel (mit Warnung in Produktion) |
+| Leere `product_similarity` | „Ähnliche Produkte" fällt auf Kategorie + Bewertung zurück |
+| Leere `events` | „Kunden sahen auch an" wird ausgeblendet |

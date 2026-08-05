@@ -1,15 +1,26 @@
 import { NextResponse } from 'next/server'
-import { MOCK_PRODUCTS } from '@/lib/supabase'
+import type { NextRequest } from 'next/server'
+import { z } from 'zod'
+import { getAllProducts, getProductsByCategory } from '@/lib/db/products'
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const category = searchParams.get('category')
-  const limit = parseInt(searchParams.get('limit') || '20')
+const querySchema = z.object({
+  category: z.string().trim().max(64).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(20),
+})
 
-  let products = MOCK_PRODUCTS
-  if (category) {
-    products = products.filter(p => p.category === category)
+export async function GET(request: NextRequest) {
+  const parsed = querySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams))
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Ungültige Parameter', issues: parsed.error.issues },
+      { status: 400 }
+    )
   }
 
-  return NextResponse.json({ products: products.slice(0, limit) })
+  const { category, limit } = parsed.data
+  const products = category
+    ? (await getProductsByCategory(category)).slice(0, limit)
+    : await getAllProducts({ limit })
+
+  return NextResponse.json({ products, count: products.length })
 }

@@ -1,11 +1,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { formatPrice, calculateSavings, cn } from '@/lib/utils'
-import type { Product } from '@/lib/supabase'
+import { AFFILIATE_REL, buildGoUrl, type Placement } from '@/lib/affiliate'
+import FavouriteButton from './FavouriteButton'
+import type { Product } from '@/lib/db/schema'
 
 interface ProductCardProps {
   product: Product
   index?: number
+  /** Which surface this card sits on — flows into click attribution. */
+  placement?: Placement
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -25,7 +29,7 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
-export default function ProductCard({ product, index = 0 }: ProductCardProps) {
+export default function ProductCard({ product, index = 0, placement = 'card' }: ProductCardProps) {
   const savings = product.original_price
     ? calculateSavings(product.original_price, product.price)
     : 0
@@ -63,9 +67,12 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       </Link>
 
       <div className="p-4">
-        {product.category && (
-          <span className="text-xs text-gray-500 uppercase tracking-wide">{product.category}</span>
-        )}
+        <div className="flex items-start justify-between gap-2">
+          {product.category && (
+            <span className="text-xs text-gray-500 uppercase tracking-wide">{product.category}</span>
+          )}
+          <FavouriteButton productId={product.id} size="sm" />
+        </div>
         <Link href={`/product/${product.id}`}>
           <h3 className="font-semibold text-gray-900 mt-1 line-clamp-2 hover:text-accent transition-colors">
             {product.name}
@@ -91,9 +98,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         </div>
 
         <a
-          href={product.affiliate_url}
+          href={buildGoUrl(product, placement)}
           target="_blank"
-          rel="noopener noreferrer"
+          rel={AFFILIATE_REL}
           className="block mt-3 w-full bg-accent text-white text-center py-2 rounded-lg font-medium hover:brightness-110 transition"
         >
           Zum Shop

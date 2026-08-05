@@ -1,67 +1,125 @@
-import { Metadata } from 'next'
+import type { Metadata } from 'next'
 import Image from 'next/image'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import {
-  MOCK_PRODUCTS,
-  type Product,
-} from '@/lib/supabase'
+import { getAllProductIds, getCategory, getProductById, type Product } from '@/lib/db/products'
+import { getAlsoViewed, getRelatedProducts } from '@/lib/db/recommendations'
 import { formatPrice, calculateSavings } from '@/lib/utils'
+import { AFFILIATE_REL, buildAffiliateUrl, buildGoUrl } from '@/lib/affiliate'
+import { absoluteUrl } from '@/lib/site'
+import FavouriteButton from '@/components/FavouriteButton'
+import ProductRail from '@/components/ProductRail'
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export const dynamic = 'force-static'
+export const revalidate = 86400
 
-export function generateStaticParams() {
-  return MOCK_PRODUCTS.map((p) => ({ id: p.id }))
-}
+/**
+ * Every product URL is prerendered from the database; unknown ASINs get a real
+ * HTTP 404 from the router.
+ *
+ * The alternative (dynamicParams = true, rendering unknown ids on demand) turns
+ * every bogus ASIN into a soft 404: `notFound()` renders the right page but the
+ * prerendered response carries HTTP 200, which is worse for SEO than the
+ * rebuild cost. Products added by a later scrape appear after the next
+ * `npm run build` — which is the deployment step for this local setup anyway.
+ */
+export const dynamicParams = false
 
-async function getProduct(id: string): Promise<Product | null> {
-  return MOCK_PRODUCTS.find(p => p.id === id || p.external_id === id) || null
+export async function generateStaticParams() {
+  const ids = await getAllProductIds()
+  return ids.map((product) => ({ id: product.id }))
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const product = await getProduct(id)
+  const product = await getProductById(id)
   if (!product) return { title: 'Produkt nicht gefunden' }
+
+  const description =
+    product.seo_description ||
+    product.description ||
+    `${product.name} zum Preis von ${formatPrice(product.price)} – Preisvergleich und Bewertungen bei Daily Trends.`
+
   return {
     title: product.name,
-    description: product.seo_description || product.description || `Kaufe ${product.name} zum besten Preis bei Daily Trends.`,
+    description,
+    alternates: { canonical: `/product/${product.id}` },
     openGraph: {
       title: product.name,
-      description: product.seo_description || `Jetzt ${product.name} günstig kaufen`,
+      description,
+      url: `/product/${product.id}`,
       images: product.image_url ? [product.image_url] : [],
     },
   }
 }
 
+/**
+ * Product structured data. `offers.url` deliberately points at the tagged Amazon
+ * URL, not our /go redirect: crawlers should index the destination, humans get
+ * the click-tracked hop.
+ */
 function generateJsonLd(product: Product) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    description: product.description || product.seo_description,
-    image: product.image_url,
+    description: product.seo_description || product.description || undefined,
+    image: product.image_url ?? undefined,
+    sku: product.external_id,
+    brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+    url: absoluteUrl(`/product/${product.id}`),
     offers: {
       '@type': 'Offer',
       price: product.price,
       priceCurrency: 'EUR',
       availability: 'https://schema.org/InStock',
-      url: product.affiliate_url,
+      url: buildAffiliateUrl(product, { placement: 'detail' }),
     },
-    aggregateRating: product.rating
-      ? { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.review_count }
-      : undefined,
+    aggregateRating:
+      product.rating && product.review_count > 0
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: product.rating,
+            reviewCount: product.review_count,
+          }
+        : undefined,
   }
 }
 
-export const revalidate = 86400
+function breadcrumbJsonLd(product: Product, categoryName: string | null) {
+  const items = [
+    { name: 'Startseite', url: absoluteUrl('/') },
+    ...(product.category && categoryName
+      ? [{ name: categoryName, url: absoluteUrl(`/category/${product.category}`) }]
+      : []),
+    { name: product.name, url: absoluteUrl(`/product/${product.id}`) },
+  ]
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  }
+}
 
 export default async function ProductPage({ params }: PageProps) {
   const { id } = await params
-  const product = await getProduct(id)
+  const product = await getProductById(id)
   if (!product) notFound()
+
+  const [category, related, alsoViewed] = await Promise.all([
+    product.category ? getCategory(product.category) : Promise.resolve(null),
+    getRelatedProducts(product.id, 4),
+    getAlsoViewed(product.id, 4),
+  ])
 
   const savings = product.original_price
     ? calculateSavings(product.original_price, product.price)
@@ -73,7 +131,25 @@ export default async function ProductPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(generateJsonLd(product)) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd(product, category?.name ?? null)),
+        }}
+      />
       <div>
+        <nav className="mb-6 text-sm text-gray-500" aria-label="Breadcrumb">
+          <Link href="/" className="hover:text-accent">Startseite</Link>
+          {category && (
+            <>
+              <span className="mx-2">/</span>
+              <Link href={`/category/${category.slug}`} className="hover:text-accent">
+                {category.name}
+              </Link>
+            </>
+          )}
+        </nav>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="relative aspect-square bg-white rounded-xl overflow-hidden shadow-lg">
             {product.image_url ? (
@@ -100,12 +176,20 @@ export default async function ProductPage({ params }: PageProps) {
           </div>
 
           <div>
-            {product.category && (
-              <span className="text-sm text-gray-500 uppercase tracking-wide">{product.category}</span>
-            )}
-            {product.brand && (
-              <span className="text-sm text-gray-400 ml-2">• {product.brand}</span>
-            )}
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                {category && (
+                  <Link
+                    href={`/category/${category.slug}`}
+                    className="text-sm text-gray-500 uppercase tracking-wide hover:text-accent"
+                  >
+                    {category.name}
+                  </Link>
+                )}
+                {product.brand && <span className="text-sm text-gray-400 ml-2">• {product.brand}</span>}
+              </div>
+              <FavouriteButton productId={product.id} showLabel />
+            </div>
 
             <h1 className="text-3xl font-bold text-primary mt-2">{product.name}</h1>
 
@@ -113,12 +197,19 @@ export default async function ProductPage({ params }: PageProps) {
               <div className="flex items-center gap-3 mt-4">
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <svg key={star} className={`w-5 h-5 ${star <= Math.round(product.rating!) ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      key={star}
+                      className={`w-5 h-5 ${star <= Math.round(product.rating!) ? 'text-yellow-400' : 'text-gray-300'}`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
                 </div>
-                <span className="text-gray-600">{product.rating} ({product.review_count} Bewertungen)</span>
+                <span className="text-gray-600">
+                  {product.rating} ({product.review_count} Bewertungen)
+                </span>
               </div>
             )}
 
@@ -126,8 +217,12 @@ export default async function ProductPage({ params }: PageProps) {
               <span className="price-tag text-4xl font-bold text-accent">{formatPrice(product.price)}</span>
               {product.original_price && (
                 <>
-                  <span className="price-tag text-xl text-gray-400 line-through">{formatPrice(product.original_price)}</span>
-                  <span className="text-success font-medium">Du sparst {formatPrice(product.original_price - product.price)}</span>
+                  <span className="price-tag text-xl text-gray-400 line-through">
+                    {formatPrice(product.original_price)}
+                  </span>
+                  <span className="text-success font-medium">
+                    Du sparst {formatPrice(product.original_price - product.price)}
+                  </span>
                 </>
               )}
               <small className="block w-full text-xs text-gray-400 mt-1">
@@ -136,9 +231,9 @@ export default async function ProductPage({ params }: PageProps) {
             </div>
 
             <a
-              href={product.affiliate_url}
+              href={buildGoUrl(product, 'detail')}
               target="_blank"
-              rel="noopener noreferrer"
+              rel={AFFILIATE_REL}
               className="block mt-8 w-full bg-accent text-white text-center py-4 rounded-xl font-bold text-lg hover:brightness-110 transition shadow-lg"
             >
               Jetzt bei Amazon kaufen →
@@ -152,12 +247,24 @@ export default async function ProductPage({ params }: PageProps) {
               <div className="mt-8">
                 <h2 className="text-xl font-semibold mb-3">Produktbeschreibung</h2>
                 <p className="text-gray-600 leading-relaxed">
-                  {product.seo_description || product.description}
+                  {product.description || product.seo_description}
                 </p>
+                {product.description_source === 'ai' && (
+                  <p className="mt-2 text-xs text-gray-400">
+                    Diese Beschreibung wurde KI-gestützt aus den Produktdaten erzeugt.
+                  </p>
+                )}
               </div>
             )}
           </div>
         </div>
+
+        <ProductRail title="Ähnliche Produkte" products={related} />
+        <ProductRail
+          title="Kunden sahen auch an"
+          products={alsoViewed}
+          subtitle="Basierend auf dem Verhalten anderer Besucher in dieser Sitzung."
+        />
       </div>
     </>
   )

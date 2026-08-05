@@ -1,9 +1,21 @@
-import type { Product } from '@/lib/supabase'
+import type { Product } from '@/lib/db/schema'
 import { formatPrice, calculateSavings } from '@/lib/utils'
+import { AFFILIATE_REL, buildGoUrl, type Placement } from '@/lib/affiliate'
+
+type AdVariant = 'skyscraper' | 'wide-skyscraper' | 'rectangle' | 'leaderboard' | 'square'
 
 interface AdBannerProps {
   product: Product
-  variant?: 'skyscraper' | 'wide-skyscraper' | 'rectangle' | 'leaderboard' | 'square'
+  variant?: AdVariant
+}
+
+/** Each banner format is tracked separately, so we can see which one converts. */
+const variantPlacement: Record<AdVariant, Placement> = {
+  skyscraper: 'ad-skyscraper',
+  'wide-skyscraper': 'ad-wide-skyscraper',
+  rectangle: 'ad-rectangle',
+  leaderboard: 'ad-leaderboard',
+  square: 'ad-square',
 }
 
 const variantStyles = {
@@ -23,9 +35,9 @@ export default function AdBanner({ product, variant = 'wide-skyscraper' }: AdBan
 
   return (
     <a
-      href={product.affiliate_url}
+      href={buildGoUrl(product, variantPlacement[variant])}
       target="_blank"
-      rel="noopener noreferrer"
+      rel={AFFILIATE_REL}
       className={`block ${style.width} ${style.height} bg-gradient-to-b from-[#0F172A] to-[#1E293B] rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group relative`}
     >
       {savings > 0 && (

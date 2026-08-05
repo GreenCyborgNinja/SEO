@@ -1,15 +1,30 @@
+"""Generates the ad creatives (PNG) that the sync workflow uploads as artifacts.
+
+Products come from the SQLite catalogue, with the JSON snapshot as fallback, and
+the curated ASIN pool is shared with the website banners via
+shared/curated-ads.json — so both advertise the same products.
+"""
+
 import json
 import os
-import math
-from typing import Dict, Any, List, Tuple
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import sys
+from typing import Dict, Any, List, Tuple, Optional
+from PIL import Image, ImageDraw, ImageFont
 
-CURATED_IDS = [
-    "B0GR6PN6BH", "B0DDCSBL87", "B0DSGB8C6M", "B0F8F3NNS6",
-    "B08369D1K4", "B07KP2FFVM", "B0C3HCD34R", "B0GSZT2NBN",
-    "B0DZ754W6Y", "B0BRMNB4Y6", "B0CPM45WF7", "B0C5XPJBFB",
-    "B0GFXMT71D", "B0CBCPB2T1", "B0DJWBDNCW",
-]
+# The scraper package holds the shared paths/db helpers.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scraper"))
+
+from paths import CURATED_ADS_PATH, SNAPSHOT_PATH  # noqa: E402
+
+
+def load_curated_ids() -> List[str]:
+    """Single source of truth, shared with frontend/lib/ads.ts."""
+    try:
+        with open(CURATED_ADS_PATH, "r", encoding="utf-8") as handle:
+            return json.load(handle)["asins"]
+    except (OSError, KeyError, json.JSONDecodeError) as exc:
+        print(f"  ! could not read {CURATED_ADS_PATH}: {exc}")
+        return []
 
 SIZES = {
     "skyscraper_left": (160, 600),
@@ -42,24 +57,52 @@ def draw_gradient(draw: ImageDraw.ImageDraw, size: Tuple[int, int]):
         draw.line([(0, y), (w, y)], fill=color)
 
 
-def load_font(size: int) -> ImageFont.FreeTypeFont:
-    try:
-        return ImageFont.truetype("C:\\Windows\\Fonts\\segoeui.ttf", size)
-    except (IOError, OSError):
-        try:
-            return ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf", size)
-        except (IOError, OSError):
-            return ImageFont.load_default()
+# Font candidates per platform. The previous version only looked in
+# C:\Windows\Fonts, so every creative built on Linux CI silently fell back to
+# Pillow's tiny bitmap font and looked nothing like the local output.
+_REGULAR_FONTS = [
+    "C:\\Windows\\Fonts\\segoeui.ttf",
+    "C:\\Windows\\Fonts\\arial.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+    "/System/Library/Fonts/Helvetica.ttc",
+]
+
+_BOLD_FONTS = [
+    "C:\\Windows\\Fonts\\segoeuib.ttf",
+    "C:\\Windows\\Fonts\\arialbd.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+    "/System/Library/Fonts/Helvetica.ttc",
+]
+
+_warned_about_fonts = False
 
 
-def load_font_bold(size: int) -> ImageFont.FreeTypeFont:
-    try:
-        return ImageFont.truetype("C:\\Windows\\Fonts\\segoeuib.ttf", size)
-    except (IOError, OSError):
+def _load_from(candidates: List[str], size: int) -> ImageFont.ImageFont:
+    global _warned_about_fonts
+    for path in candidates:
         try:
-            return ImageFont.truetype("C:\\Windows\\Fonts\\arialbd.ttf", size)
+            return ImageFont.truetype(path, size)
         except (IOError, OSError):
-            return ImageFont.load_default()
+            continue
+    if not _warned_about_fonts:
+        _warned_about_fonts = True
+        print(
+            "  ! no TrueType font found — falling back to Pillow's bitmap font.\n"
+            "    On Debian/Ubuntu install one: apt-get install -y fonts-dejavu-core"
+        )
+    return ImageFont.load_default()
+
+
+def load_font(size: int) -> ImageFont.ImageFont:
+    return _load_from(_REGULAR_FONTS, size)
+
+
+def load_font_bold(size: int) -> ImageFont.ImageFont:
+    return _load_from(_BOLD_FONTS, size)
 
 
 def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_width: int, draw: ImageDraw.ImageDraw) -> List[str]:
@@ -234,46 +277,76 @@ def generate_ad(product: Dict[str, Any], size: Tuple[int, int]) -> Image.Image:
     return img
 
 
-def load_products() -> List[Dict[str, Any]]:
-    base = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(base, "..", "scraper", "latest-products.json")
-    if not os.path.exists(json_path):
-        json_path = os.path.join(base, "curated-ads.json")
+def _load_from_database() -> Optional[List[Dict[str, Any]]]:
+    """Preferred source: the live catalogue."""
+    try:
+        from db import connect  # imported lazily — the DB may not exist yet
 
-    with open(json_path, "r", encoding="utf-8") as f:
-        all_products = json.load(f)
+        connection = connect()
+    except Exception as exc:  # noqa: BLE001
+        print(f"  · database unavailable ({exc}) — falling back to the JSON snapshot")
+        return None
 
-    if isinstance(all_products, list) and len(all_products) > 1:
-        id_map = {p.get("external_id", ""): p for p in all_products}
-        curated = [id_map[pid] for pid in CURATED_IDS if pid in id_map]
-        if curated:
-            return curated
-        return all_products[:15]
-    return all_products if isinstance(all_products, list) else []
+    try:
+        rows = connection.execute(
+            """
+            SELECT external_id, name, brand, price, original_price, image_url, category
+            FROM products
+            ORDER BY (original_price IS NULL), (original_price - price) / original_price DESC
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        connection.close()
+
+
+def _load_from_snapshot() -> List[Dict[str, Any]]:
+    try:
+        with open(SNAPSHOT_PATH, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return []
+    # Guard against the old fallback file, which was a bare list of ASIN strings.
+    return [item for item in data if isinstance(item, dict)] if isinstance(data, list) else []
+
+
+def load_products(limit: int = 15) -> List[Dict[str, Any]]:
+    all_products = _load_from_database()
+    if not all_products:
+        all_products = _load_from_snapshot()
+    if not all_products:
+        return []
+
+    by_id = {product.get("external_id", ""): product for product in all_products}
+    curated = [by_id[asin] for asin in load_curated_ids() if asin in by_id]
+    # Curated ASINs disappear from the catalogue after a re-scrape; the best deals
+    # are a sane substitute since the database query already sorts by discount.
+    return curated if curated else all_products[:limit]
 
 
 def main():
     products = load_products()
     if not products:
-        print("ERROR: No products found")
-        return
+        print("ERROR: no products found. Create the database first:")
+        print("  cd frontend && npm run db:push && npm run db:seed")
+        return 1
 
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
     os.makedirs(output_dir, exist_ok=True)
 
+    generated = 0
     for product in products:
         pid = product.get("external_id", "unknown")
-        name = product.get("name", "")[:30].replace(" ", "_")
-
         for size_name, size in SIZES.items():
-            img = generate_ad(product, size)
+            image = generate_ad(product, size)
             filename = f"{pid}_{size_name}.png"
-            filepath = os.path.join(output_dir, filename)
-            img.save(filepath)
-            print(f"  Saved: {filename} ({size[0]}x{size[1]})")
+            image.save(os.path.join(output_dir, filename))
+            generated += 1
+            print(f"  saved: {filename} ({size[0]}x{size[1]})")
 
-    print(f"\nDone! Generated {len(products) * len(SIZES)} ad images in {output_dir}")
+    print(f"\nDone. {generated} ad images for {len(products)} products in {output_dir}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

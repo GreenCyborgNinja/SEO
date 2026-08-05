@@ -1,15 +1,16 @@
 import Link from 'next/link'
 import SearchBar from './SearchBar'
+import UserMenu from './UserMenu'
+import type { CategoryWithCount } from '@/lib/db/products'
 
-const categories = [
-  { name: 'Laptops', slug: 'laptops' },
-  { name: 'Smartphones', slug: 'smartphones' },
-  { name: 'Gaming', slug: 'gaming' },
-  { name: 'Zubehör', slug: 'zubehoer' },
-  { name: 'Deals', slug: 'deals' },
-]
+interface HeaderProps {
+  /** Populated categories only — the nav must never link into an empty page. */
+  categories: CategoryWithCount[]
+}
 
-export default function Header() {
+export default function Header({ categories }: HeaderProps) {
+  const navCategories = categories.slice(0, 4)
+
   return (
     <header className="bg-primary text-white sticky top-0 z-50 shadow-lg">
       <div className="container mx-auto px-4 py-4">
@@ -22,22 +23,28 @@ export default function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            {categories.map((cat) => (
+            {navCategories.map((category) => (
               <Link
-                key={cat.slug}
-                href={cat.slug === 'deals' ? '/deals' : `/category/${cat.slug}`}
-                className={cat.slug === 'deals'
-                  ? 'bg-accent text-white px-3 py-1 rounded-full text-sm font-bold hover:brightness-110 transition'
-                  : 'hover:text-accent transition-colors text-sm font-medium'}
+                key={category.slug}
+                href={`/category/${category.slug}`}
+                className="hover:text-accent transition-colors text-sm font-medium"
               >
-                {cat.name}
+                {category.name}
               </Link>
             ))}
+            <Link
+              href="/deals"
+              className="bg-accent text-white px-3 py-1 rounded-full text-sm font-bold hover:brightness-110 transition"
+            >
+              Deals
+            </Link>
           </nav>
 
           <div className="flex-1 max-w-md">
             <SearchBar />
           </div>
+
+          <UserMenu />
         </div>
       </div>
     </header>

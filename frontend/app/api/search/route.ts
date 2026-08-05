@@ -1,20 +1,25 @@
 import { NextResponse } from 'next/server'
-import { MOCK_PRODUCTS } from '@/lib/supabase'
+import type { NextRequest } from 'next/server'
+import { z } from 'zod'
+import { searchProducts } from '@/lib/db/products'
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const query = searchParams.get('q') || ''
+const querySchema = z.object({
+  q: z.string().trim().min(2).max(120),
+})
 
-  if (query.length < 2) {
-    return NextResponse.json({ products: [] })
-  }
+/** Feeds the header search dropdown. */
+export async function GET(request: NextRequest) {
+  const parsed = querySchema.safeParse({ q: request.nextUrl.searchParams.get('q') ?? '' })
+  if (!parsed.success) return NextResponse.json({ products: [] })
 
-  const results = MOCK_PRODUCTS.filter(p =>
-    p.name.toLowerCase().includes(query.toLowerCase()) ||
-    (p.description && p.description.toLowerCase().includes(query.toLowerCase()))
-  ).slice(0, 10)
+  const products = await searchProducts(parsed.data.q, 10)
 
   return NextResponse.json({
-    products: results.map(p => ({ id: p.id, name: p.name, price: p.price, category: p.category })),
+    products: products.map((product) => ({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      category: product.category,
+    })),
   })
 }

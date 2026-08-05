@@ -1,0 +1,114 @@
+{
+  "$comment": "Single source of truth for the shop taxonomy. Read by the Next.js frontend (frontend/lib/catalog/normalize.mjs) AND the Python scraper (backend/scraper/taxonomy.py). Assignment is scored: a keyword hit inside the first 45 characters of the title counts 3, a later hit counts 1; highest score wins, ties are broken by ascending `order`. The entry with \"fallback\": true catches products without any hit. `search_queries` and `amazon_bestseller_category` drive what the scraper fetches, so every category can actually be filled.",
+  "categories": [
+    {
+      "slug": "laptops",
+      "name": "Laptops",
+      "description": "Notebooks, Ultrabooks und Gaming-Laptops – von günstigen Einsteigergeräten bis zur mobilen Workstation.",
+      "order": 10,
+      "keywords": ["laptop", "notebook", "macbook", "chromebook", "ultrabook", "thinkpad", "ideapad", "zenbook", "vivobook", "aspire", "thinkbook", "probook", "elitebook", "inspiron", "latitude"],
+      "search_queries": [{ "query": "Laptop", "pages": 3 }, { "query": "Gaming Laptop", "pages": 1 }],
+      "amazon_bestseller_category": "computers"
+    },
+    {
+      "slug": "computer",
+      "name": "PCs & Komponenten",
+      "description": "Komplett-PCs, Mini-PCs und Komponenten wie Grafikkarten, Prozessoren und Mainboards.",
+      "order": 20,
+      "keywords": ["gaming pc", "gaming-pc", "desktop", "mini-pc", "mini pc", "komplett-pc", "all-in-one pc", "workstation", "barebone", "grafikkarte", "prozessor", "mainboard", "arbeitsspeicher", "cpu-kühler", "pc-gehäuse", "tower pc"],
+      "search_queries": [{ "query": "Gaming PC", "pages": 1 }, { "query": "Mini PC", "pages": 1 }],
+      "amazon_bestseller_category": "computers"
+    },
+    {
+      "slug": "smartphones",
+      "name": "Smartphones",
+      "description": "Aktuelle Smartphones aller Preisklassen – mit Vergleich von Preis, Bewertung und Ausstattung.",
+      "order": 30,
+      "keywords": ["smartphone", "iphone", "galaxy s2", "galaxy a", "galaxy z", "pixel", "redmi", "poco", "oneplus", "handy", "mobiltelefon"],
+      "search_queries": [{ "query": "Smartphone", "pages": 3 }],
+      "amazon_bestseller_category": "electronics"
+    },
+    {
+      "slug": "tablets",
+      "name": "Tablets",
+      "description": "Tablets und E-Reader für Arbeit, Studium und Unterhaltung.",
+      "order": 40,
+      "keywords": ["tablet", "ipad", "galaxy tab", "kindle", "e-reader", "ereader", "tab a", "tab s"],
+      "search_queries": [{ "query": "Tablet", "pages": 2 }],
+      "amazon_bestseller_category": "electronics"
+    },
+    {
+      "slug": "audio",
+      "name": "Audio & Kopfhörer",
+      "description": "Kopfhörer, Headsets, Lautsprecher und Mikrofone für Musik, Gaming und Homeoffice.",
+      "order": 50,
+      "keywords": ["kopfhörer", "kopfhoerer", "headset", "ohrhörer", "earbuds", "earpods", "in-ear", "over-ear", "airpods", "lautsprecher", "soundbar", "bluetooth box", "mikrofon", "subwoofer", "plattenspieler"],
+      "search_queries": [{ "query": "Kopfhörer", "pages": 2 }, { "query": "Bluetooth Lautsprecher", "pages": 1 }],
+      "amazon_bestseller_category": "electronics"
+    },
+    {
+      "slug": "wearables",
+      "name": "Smartwatches",
+      "description": "Smartwatches und Fitness-Tracker – Training, Schlaf und Benachrichtigungen am Handgelenk.",
+      "order": 60,
+      "keywords": ["smartwatch", "fitness-tracker", "fitnesstracker", "fitness tracker", "fitnessarmband", "activity tracker", "garmin", "fitbit", "apple watch", "amazfit"],
+      "search_queries": [{ "query": "Smartwatch", "pages": 2 }],
+      "amazon_bestseller_category": "electronics"
+    },
+    {
+      "slug": "beleuchtung",
+      "name": "RGB & Beleuchtung",
+      "description": "LED-Stripes, Lightbars und Ambient-Beleuchtung für Schreibtisch, Setup und Gaming-Zimmer.",
+      "order": 70,
+      "keywords": ["lightbar", "light bar", "led strip", "led-strip", "led streifen", "led-streifen", "wandleuchte", "leuchte", "lampe", "beleuchtung", "nachtlicht", "sternenhimmel", "stimmungslicht", "ambient light", "lichtleiste", "led panel", "tischlampe", "deckenleuchte", "projektor"],
+      "search_queries": [{ "query": "LED Gaming Beleuchtung", "pages": 1 }, { "query": "RGB LED Strip", "pages": 1 }],
+      "amazon_bestseller_category": "electronics"
+    },
+    {
+      "slug": "monitore",
+      "name": "Monitore & TV",
+      "description": "Monitore, Fernseher und Beamer – vom Office-Display bis zum Curved-Gaming-Monitor.",
+      "order": 80,
+      "keywords": ["monitor", "bildschirm", "fernseher", "smart tv", "oled tv", "led tv", "curved", "beamer", "zoll display"],
+      "search_queries": [{ "query": "Monitor", "pages": 2 }],
+      "amazon_bestseller_category": "electronics"
+    },
+    {
+      "slug": "peripherie",
+      "name": "Tastatur & Maus",
+      "description": "Tastaturen, Mäuse, Webcams, Drucker und Docking-Stations für den Arbeitsplatz.",
+      "order": 90,
+      "keywords": ["tastatur", "keyboard", "maus", "mouse", "mauspad", "mousepad", "webcam", "drucker", "scanner", "multifunktionsdrucker", "toner", "druckerpatrone", "dockingstation", "docking station", "usb-c hub", "usb hub", "kvm-switch", "trackball"],
+      "search_queries": [{ "query": "Tastatur", "pages": 1 }, { "query": "Maus", "pages": 1 }, { "query": "Webcam", "pages": 1 }, { "query": "USB-C Hub", "pages": 1 }, { "query": "Drucker", "pages": 1 }],
+      "amazon_bestseller_category": "office-products"
+    },
+    {
+      "slug": "speicher-netzwerk",
+      "name": "Speicher & Netzwerk",
+      "description": "SSDs, Festplatten, Speicherkarten, Router und NAS – mehr Platz und stabileres WLAN.",
+      "order": 100,
+      "keywords": ["festplatte", "externe ssd", "portable ssd", "nvme ssd", "usb-stick", "usb stick", "speicherkarte", "sd-karte", "microsd", "nas", "router", "repeater", "wlan-verstärker", "mesh-wlan", "access point", "powerline", "netzwerkkabel", "lan-kabel", "switch gigabit"],
+      "search_queries": [{ "query": "SSD Festplatte", "pages": 1 }, { "query": "WLAN Router", "pages": 1 }],
+      "amazon_bestseller_category": "computers"
+    },
+    {
+      "slug": "gaming",
+      "name": "Gaming",
+      "description": "Konsolen, Controller und Gaming-Equipment – von PS5-Zubehör bis zum Gaming-Stuhl.",
+      "order": 110,
+      "keywords": ["playstation", "ps5", "ps4", "xbox", "nintendo", "switch-konsole", "konsole", "controller", "gamepad", "joystick", "gaming-stuhl", "gaming stuhl", "steam deck", "gaming", "gamer"],
+      "search_queries": [{ "query": "Gaming Zubehör", "pages": 2 }, { "query": "PS5 Controller", "pages": 1 }],
+      "amazon_bestseller_category": "video-games"
+    },
+    {
+      "slug": "zubehoer",
+      "name": "Zubehör",
+      "description": "Ladegeräte, Powerbanks, Hüllen, Kabel und Halterungen – das Kleinzeug, das den Alltag rettet.",
+      "order": 999,
+      "fallback": true,
+      "keywords": ["ladegerät", "ladekabel", "powerbank", "hülle", "tasche", "schutzfolie", "halterung", "ständer", "kabel", "adapter", "netzteil", "reiniger"],
+      "search_queries": [{ "query": "Powerbank", "pages": 1 }, { "query": "Handy Halterung", "pages": 1 }],
+      "amazon_bestseller_category": "electronics"
+    }
+  ]
+}

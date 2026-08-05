@@ -1,13 +1,29 @@
 name: Product Sync Pipeline
 
+# One run per day, not two workflows every 12 hours: a full sync costs ~37
+# RapidAPI calls and the free tier allows 100/day. The previous setup ran this
+# scraper twice a day from two workflows (~140 calls) and threw one of the two
+# results away.
 on:
   schedule:
-    - cron: '0 */12 * * *'
+    - cron: '0 4 * * *'
   workflow_dispatch:
+    inputs:
+      skip_scrape:
+        description: 'Skip the RapidAPI fetch (regenerate copy/ads only)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: product-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # Needed to commit the refreshed snapshot back to the repository.
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -16,19 +32,69 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Python dependencies
         run: |
-          cd backend
-          pip install -r requirements.txt
-          pip install -r ad_generator/requirements.txt
+          pip install -r backend/requirements.txt
+          pip install -r backend/ad_generator/requirements.txt
 
-      - name: Run product sync via RapidAPI
+      # Without a real TrueType font Pillow silently uses a tiny bitmap font and
+      # the creatives look nothing like the local output.
+      - name: Install fonts for the ad generator
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-dejavu-core
+
+      - name: Install Node dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # The database file is gitignored, so CI rebuilds it from the committed
+      # snapshot, updates it, and exports it back (see db-export.mjs).
+      - name: Build database from snapshot
+        working-directory: frontend
+        run: node scripts/db-prepare.mjs
+
+      - name: Fetch products from RapidAPI
+        if: ${{ !inputs.skip_scrape }}
         env:
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
           RAPIDAPI_COUNTRY: ${{ vars.RAPIDAPI_COUNTRY }}
+          MAX_API_CALLS: ${{ vars.MAX_API_CALLS || '80' }}
         run: cd backend/scraper && python main.py
+
+      # Falls back to deterministic templates when no GEMINI_API_KEY secret exists.
+      - name: Generate missing product descriptions
+        working-directory: frontend
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/ai-descriptions.mjs --limit=60
+
+      - name: Rebuild recommendations
+        working-directory: frontend
+        run: node scripts/build-similarity.mjs
+
+      - name: Export snapshot
+        working-directory: frontend
+        run: node scripts/db-export.mjs
+
+      - name: Commit refreshed snapshot
+        run: |
+          if git diff --quiet -- backend/scraper/latest-products.json; then
+            echo "Snapshot unchanged — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/scraper/latest-products.json
+          git commit -m "chore: refresh product snapshot [skip ci]"
+          git push
 
       - name: Generate ad creatives (Pillow)
         run: cd backend/ad_generator && python generate_images.py
@@ -38,10 +104,15 @@ jobs:
         with:
           name: ad-creatives
           path: backend/ad_generator/output/
+          retention-days: 14
 
-  notify:
-    needs: sync
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send notification (optional)
-        run: echo "Sync completed successfully"
+      - name: Summary
+        if: always()
+        run: |
+          COUNT=$(node -e "console.log(require('./backend/scraper/latest-products.json').length)")
+          {
+            echo "### Product sync"
+            echo ""
+            echo "- Snapshot: **$COUNT** products"
+            echo "- Ad creatives uploaded as artifact \`ad-creatives\`"
+          } >> "$GITHUB_STEP_SUMMARY"

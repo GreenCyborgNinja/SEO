@@ -1,60 +1,46 @@
-'use client'
-
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-
-const categories = [
-  { name: 'Alle', slug: '', color: 'bg-gray-200' },
-  { name: 'Laptops', slug: 'laptops', color: 'bg-blue-100' },
-  { name: 'Smartphones', slug: 'smartphones', color: 'bg-green-100' },
-  { name: 'Gaming', slug: 'gaming', color: 'bg-purple-100' },
-  { name: 'Computer', slug: 'computer', color: 'bg-indigo-100' },
-  { name: 'Elektronik', slug: 'elektronik', color: 'bg-cyan-100' },
-  { name: 'Kamera & Foto', slug: 'kamera-foto', color: 'bg-teal-100' },
-  { name: 'Smart Home', slug: 'smart-home', color: 'bg-emerald-100' },
-  { name: 'TV & Heimkino', slug: 'tv-heimkino', color: 'bg-rose-100' },
-  { name: 'Musik', slug: 'musik', color: 'bg-pink-100' },
-  { name: 'Küche', slug: 'kueche', color: 'bg-amber-100' },
-  { name: 'Haushalt', slug: 'haushalt', color: 'bg-lime-100' },
-  { name: 'Garten', slug: 'garten', color: 'bg-green-200' },
-  { name: 'Baumarkt', slug: 'baumarkt', color: 'bg-orange-200' },
-  { name: 'Sport', slug: 'sport', color: 'bg-red-100' },
-  { name: 'Spielzeug', slug: 'spielzeug', color: 'bg-yellow-100' },
-  { name: 'Beauty', slug: 'beauty', color: 'bg-fuchsia-100' },
-  { name: 'Baby', slug: 'baby', color: 'bg-sky-100' },
-  { name: 'Haustier', slug: 'haustier', color: 'bg-amber-200' },
-  { name: 'Bücher', slug: 'buecher', color: 'bg-stone-100' },
-  { name: 'Kleidung', slug: 'kleidung', color: 'bg-violet-100' },
-  { name: 'Schuhe', slug: 'schuhe', color: 'bg-purple-200' },
-  { name: 'Lebensmittel', slug: 'lebensmittel', color: 'bg-lime-200' },
-  { name: 'Auto', slug: 'auto', color: 'bg-gray-300' },
-  { name: 'Zubehör', slug: 'zubehoer', color: 'bg-orange-100' },
-]
+import type { CategoryWithCount } from '@/lib/db/products'
 
 interface CategoryFilterProps {
+  categories: CategoryWithCount[]
   activeCategory?: string
 }
 
-export default function CategoryFilter({ activeCategory = '' }: CategoryFilterProps) {
+/**
+ * Category pills, driven by the database instead of a hardcoded list. The old
+ * version shipped 25 slugs of which only four ever had products, so most pills
+ * led to an empty page.
+ */
+export default function CategoryFilter({ categories, activeCategory = '' }: CategoryFilterProps) {
+  const populated = categories.filter((category) => category.product_count > 0)
+
   return (
     <div className="flex flex-wrap gap-2 mb-8">
-      {categories.map((cat) => {
-        const isActive = activeCategory === cat.slug || (!activeCategory && !cat.slug)
-        return (
-          <Link
-            key={cat.slug || 'all'}
-            href={cat.slug ? `/category/${cat.slug}` : '/'}
-            className={cn(
-              'px-4 py-2 rounded-full text-sm font-medium transition-all',
-              isActive
-                ? 'bg-accent text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100'
-            )}
-          >
-            {cat.name}
-          </Link>
-        )
-      })}
+      <Link
+        href="/"
+        className={cn(
+          'px-4 py-2 rounded-full text-sm font-medium transition-all',
+          !activeCategory ? 'bg-accent text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
+        )}
+      >
+        Alle
+      </Link>
+      {populated.map((category) => (
+        <Link
+          key={category.slug}
+          href={`/category/${category.slug}`}
+          className={cn(
+            'px-4 py-2 rounded-full text-sm font-medium transition-all',
+            activeCategory === category.slug
+              ? 'bg-accent text-white'
+              : 'bg-white text-gray-600 hover:bg-gray-100'
+          )}
+        >
+          {category.name}
+          <span className="ml-1.5 text-xs opacity-60">{category.product_count}</span>
+        </Link>
+      ))}
     </div>
   )
 }

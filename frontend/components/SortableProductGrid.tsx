@@ -2,7 +2,9 @@
 
 import { useState, useMemo } from 'react'
 import ProductCard from './ProductCard'
-import type { Product } from '@/lib/supabase'
+import { calculateSavings } from '@/lib/utils'
+import type { Placement } from '@/lib/affiliate'
+import type { Product } from '@/lib/db/schema'
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'savings' | 'rating'
 
@@ -14,9 +16,9 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'rating', label: 'Beste Bewertung' },
 ]
 
-function calculateSavings(product: Product): number {
+function savingsPercent(product: Product): number {
   if (!product.original_price || product.original_price <= product.price) return 0
-  return Math.round(((product.original_price - product.price) / product.original_price) * 100)
+  return calculateSavings(product.original_price, product.price)
 }
 
 function sortProducts(products: Product[], sort: SortOption): Product[] {
@@ -29,13 +31,7 @@ function sortProducts(products: Product[], sort: SortOption): Product[] {
       sorted.sort((a, b) => b.price - a.price)
       break
     case 'savings':
-      sorted.sort((a, b) => {
-        const sa = a.original_price && a.original_price > a.price
-          ? (a.original_price - a.price) / a.original_price : 0
-        const sb = b.original_price && b.original_price > b.price
-          ? (b.original_price - b.price) / b.original_price : 0
-        return sb - sa
-      })
+      sorted.sort((a, b) => savingsPercent(b) - savingsPercent(a))
       break
     case 'rating':
       sorted.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
@@ -46,9 +42,15 @@ function sortProducts(products: Product[], sort: SortOption): Product[] {
 
 interface SortableProductGridProps {
   products: Product[]
+  placement?: Placement
+  emptyMessage?: string
 }
 
-export default function SortableProductGrid({ products }: SortableProductGridProps) {
+export default function SortableProductGrid({
+  products,
+  placement = 'card',
+  emptyMessage = 'Keine Produkte verfügbar.',
+}: SortableProductGridProps) {
   const [sort, setSort] = useState<SortOption>('default')
 
   const sorted = useMemo(() => sortProducts(products, sort), [products, sort])
@@ -56,13 +58,16 @@ export default function SortableProductGrid({ products }: SortableProductGridPro
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <span className="text-sm text-gray-500">{products.length} Produkte</span>
+        <span className="text-sm text-gray-500">
+          {products.length} {products.length === 1 ? 'Produkt' : 'Produkte'}
+        </span>
         <select
           value={sort}
-          onChange={e => setSort(e.target.value as SortOption)}
+          onChange={(e) => setSort(e.target.value as SortOption)}
+          aria-label="Produkte sortieren"
           className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent cursor-pointer"
         >
-          {SORT_OPTIONS.map(opt => (
+          {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
@@ -71,12 +76,12 @@ export default function SortableProductGrid({ products }: SortableProductGridPro
       {sorted.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sorted.map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} />
+            <ProductCard key={product.id} product={product} index={index} placement={placement} />
           ))}
         </div>
       ) : (
         <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">Keine Produkte verfügbar.</p>
+          <p className="text-gray-500 text-lg">{emptyMessage}</p>
         </div>
       )}
     </div>

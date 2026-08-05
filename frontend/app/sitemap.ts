@@ -1,35 +1,40 @@
-import { MetadataRoute } from 'next'
-import { MOCK_PRODUCTS } from '@/lib/supabase'
+import type { MetadataRoute } from 'next'
+import { getAllProductIds, getCategoriesWithCounts } from '@/lib/db/products'
+import { SITE_URL } from '@/lib/site'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://daily-trends.de'
-
-  const productIds = MOCK_PRODUCTS.map((p) => ({ id: p.id, updated_at: p.updated_at }))
+  const [productIds, categories] = await Promise.all([getAllProductIds(), getCategoriesWithCounts()])
 
   const productUrls = productIds.map((product) => ({
-    url: `${baseUrl}/product/${product.id}`,
+    url: `${SITE_URL}/product/${product.id}`,
     lastModified: new Date(product.updated_at),
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }))
 
-  const categoryUrls = [
-    { slug: 'laptops', priority: 0.9 },
-    { slug: 'smartphones', priority: 0.9 },
-    { slug: 'gaming', priority: 0.9 },
-    { slug: 'zubehoer', priority: 0.8 },
-    { slug: 'buecher', priority: 0.8 },
-  ].map((cat) => ({
-    url: `${baseUrl}/category/${cat.slug}`,
+  // Only categories that actually have products — empty pages must not be indexed.
+  const categoryUrls = categories
+    .filter((category) => category.product_count > 0)
+    .map((category) => ({
+      url: `${SITE_URL}/category/${category.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.9,
+    }))
+
+  const staticUrls = [
+    { path: '', priority: 1, changeFrequency: 'daily' as const },
+    { path: '/deals', priority: 0.9, changeFrequency: 'daily' as const },
+    { path: '/about', priority: 0.4, changeFrequency: 'monthly' as const },
+    { path: '/contact', priority: 0.4, changeFrequency: 'monthly' as const },
+    { path: '/privacy', priority: 0.3, changeFrequency: 'yearly' as const },
+    { path: '/impressum', priority: 0.3, changeFrequency: 'yearly' as const },
+  ].map((entry) => ({
+    url: `${SITE_URL}${entry.path}`,
     lastModified: new Date(),
-    changeFrequency: 'daily' as const,
-    priority: cat.priority,
+    changeFrequency: entry.changeFrequency,
+    priority: entry.priority,
   }))
 
-  return [
-    { url: baseUrl, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
-    { url: `${baseUrl}/deals`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
-    ...categoryUrls,
-    ...productUrls,
-  ]
+  return [...staticUrls, ...categoryUrls, ...productUrls]
 }

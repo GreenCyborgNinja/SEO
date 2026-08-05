@@ -1,0 +1,20 @@
+{
+  "$comment": "Hand-picked ASINs used as the ad-creative pool. Shared by the website banners (frontend/lib/ads.ts) and the Pillow image generator (backend/ad_generator/generate_images.py) so both advertise the same products.",
+  "asins": [
+    "B0GR6PN6BH",
+    "B0DDCSBL87",
+    "B0DSGB8C6M",
+    "B0F8F3NNS6",
+    "B08369D1K4",
+    "B07KP2FFVM",
+    "B0C3HCD34R",
+    "B0GSZT2NBN",
+    "B0DZ754W6Y",
+    "B0BRMNB4Y6",
+    "B0CPM45WF7",
+    "B0C5XPJBFB",
+    "B0GFXMT71D",
+    "B0CBCPB2T1",
+    "B0DJWBDNCW"
+  ]
+}
